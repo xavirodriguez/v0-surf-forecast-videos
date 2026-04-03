@@ -5,11 +5,11 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { SurfForecastProps } from "../schemas/surf-forecast.js";
-import { WaveIcon } from "./ui/WaveIcon.js";
-import { ConditionBadge } from "./ui/ConditionBadge.js";
-import { AnimatedNumber } from "./ui/AnimatedNumber.js";
-import { WindArrow } from "./ui/WindArrow.js";
+import { SurfForecastProps } from "../schemas/surf-forecast";
+import { WaveIcon } from "./ui/WaveIcon";
+import { ConditionBadge } from "./ui/ConditionBadge";
+import { AnimatedNumber } from "./ui/AnimatedNumber";
+import { WindArrow } from "./ui/WindArrow";
 
 export const SurfThumbnail = ({
   spotName,

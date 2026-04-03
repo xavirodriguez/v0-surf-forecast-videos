@@ -5,9 +5,9 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { SurfForecastProps } from "../../schemas/surf-forecast.js";
-import { WindArrow } from "../ui/WindArrow.js";
-import { AnimatedNumber } from "../ui/AnimatedNumber.js";
+import { SurfForecastProps } from "../../schemas/surf-forecast";
+import { WindArrow } from "../ui/WindArrow";
+import { AnimatedNumber } from "../ui/AnimatedNumber";
 
 type WindMapProps = Pick<
   SurfForecastProps,

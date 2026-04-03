@@ -5,8 +5,8 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { SurfForecastProps } from "../../schemas/surf-forecast.js";
-import { WindArrow } from "../ui/WindArrow.js";
+import { SurfForecastProps } from "../../schemas/surf-forecast";
+import { WindArrow } from "../ui/WindArrow";
 
 type SwellChartProps = Pick<
   SurfForecastProps,

@@ -5,7 +5,7 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { SurfForecastProps } from "../../schemas/surf-forecast.js";
+import { SurfForecastProps } from "../../schemas/surf-forecast";
 
 type TideChartProps = Pick<
   SurfForecastProps,
