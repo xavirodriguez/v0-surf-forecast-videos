@@ -1,4 +1,4 @@
-import { RatingValue } from "../schemas/surf-forecast.js";
+import { RatingValue } from "../schemas/surf-forecast";
 
 export const RATING_COLORS: Record<RatingValue, string> = {
   flat: "#999999",

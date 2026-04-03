@@ -5,10 +5,10 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { SurfForecastProps } from "../../schemas/surf-forecast.js";
-import { WindArrow } from "../ui/WindArrow.js";
-import { getRatingColor, getRatingLabel } from "../../lib/rating.js";
-import { SCENE_DURATIONS } from "../../lib/calculate-surf-metadata.js";
+import { SurfForecastProps } from "../../schemas/surf-forecast";
+import { WindArrow } from "../ui/WindArrow";
+import { getRatingColor, getRatingLabel } from "../../lib/rating";
+import { SCENE_DURATIONS } from "../../lib/calculate-surf-metadata";
 
 type HourlyForecastProps = Pick<
   SurfForecastProps,

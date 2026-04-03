@@ -1,6 +1,6 @@
 import { SurfForecastProps, surfForecastSchema } from '../schemas/surf-forecast';
 import { fetchMarineData, fetchWindData } from './open-meteo-client';
-import { fetchTides, fetchWaterTemp } from './noaa-tides-client';
+import { fetchTides, fetchWaterTemp, TideEvent } from './noaa-tides-client';
 import { SpotMeta } from './spots';
 import { transformToSurfProps } from './transform-to-schema';
 
@@ -31,7 +31,7 @@ export async function fetchSurfData(
     console.log(`[v0] Marine and wind data fetched successfully`);
 
     // Fetch tides and water temp if NOAA station is available
-    let tidesData = [];
+    let tidesData: TideEvent[] = [];
     let waterTemp: number | null = null;
 
     if (spotMeta.noaaStationId) {

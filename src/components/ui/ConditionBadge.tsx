@@ -1,6 +1,6 @@
 import { useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
-import { RatingValue } from "../../schemas/surf-forecast.js";
-import { getRatingColor, getRatingLabel } from "../../lib/rating.js";
+import { RatingValue } from "../../schemas/surf-forecast";
+import { getRatingColor, getRatingLabel } from "../../lib/rating";
 
 type ConditionBadgeProps = {
   rating: RatingValue;

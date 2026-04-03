@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // Type definitions for Open-Meteo Marine API
 const MarineDataSchema = z.object({
-  time: z.array(z.string()),
   hourly: z.object({
+    time: z.array(z.string()),
     wave_height: z.array(z.number()),
     wave_period: z.array(z.number()),
     wave_direction: z.array(z.number()),
@@ -18,8 +18,8 @@ export type MarineData = z.infer<typeof MarineDataSchema>;
 
 // Type definitions for Open-Meteo Weather API
 const WeatherDataSchema = z.object({
-  time: z.array(z.string()),
   hourly: z.object({
+    time: z.array(z.string()),
     windspeed_10m: z.array(z.number()),
     winddirection_10m: z.array(z.number()),
     temperature_2m: z.array(z.number()),

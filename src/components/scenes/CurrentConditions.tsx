@@ -4,13 +4,12 @@ import {
   useVideoConfig,
   spring,
   interpolate,
-  Sequence,
 } from "remotion";
-import { SurfForecastProps } from "../../schemas/surf-forecast.js";
-import { WaveIcon } from "../ui/WaveIcon.js";
-import { WindArrow } from "../ui/WindArrow.js";
-import { ConditionBadge } from "../ui/ConditionBadge.js";
-import { AnimatedNumber } from "../ui/AnimatedNumber.js";
+import { SurfForecastProps } from "../../schemas/surf-forecast";
+import { WaveIcon } from "../ui/WaveIcon";
+import { WindArrow } from "../ui/WindArrow";
+import { ConditionBadge } from "../ui/ConditionBadge";
+import { AnimatedNumber } from "../ui/AnimatedNumber";
 
 type CurrentConditionsProps = Pick<
   SurfForecastProps,
@@ -30,23 +29,27 @@ type CurrentConditionsProps = Pick<
   | "backgroundColor"
 >;
 
-type StatCardProps = {
-  label: string;
-  children: React.ReactNode;
-  delay?: number;
-  primaryColor: string;
-  backgroundColor: string;
-  flex?: number;
+interface LayoutConfig {
+  isPortrait: boolean;
+  heroFontSize: number;
+  statFontSize: number;
+  padding: number;
+  gap: number;
+}
+
+const getLayoutConfig = (width: number, height: number): LayoutConfig => {
+  const isPortrait = height > width;
+  const isSquare = width === height;
+  return {
+    isPortrait,
+    heroFontSize: isPortrait ? 120 : isSquare ? 100 : 140,
+    statFontSize: isPortrait ? 36 : isSquare ? 32 : 44,
+    padding: isPortrait ? 48 : isSquare ? 40 : 64,
+    gap: isPortrait ? 24 : 20,
+  };
 };
 
-const StatCard = ({
-  label,
-  children,
-  delay = 0,
-  primaryColor,
-  backgroundColor,
-  flex = 1,
-}: StatCardProps) => {
+const StatCard = ({ label, children, delay = 0, primaryColor, statFontSize }: { label: string, children: React.ReactNode, delay?: number, primaryColor: string, statFontSize: number }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -56,13 +59,10 @@ const StatCard = ({
     config: { damping: 160, stiffness: 80 },
   });
 
-  const opacity = interpolate(entry, [0, 1], [0, 1]);
-  const translateY = interpolate(entry, [0, 1], [30, 0]);
-
   return (
     <div
       style={{
-        flex,
+        flex: 1,
         background: "rgba(255,255,255,0.07)",
         border: `1px solid ${primaryColor}44`,
         borderRadius: 16,
@@ -70,20 +70,11 @@ const StatCard = ({
         display: "flex",
         flexDirection: "column",
         gap: 8,
-        opacity,
-        transform: `translateY(${translateY}px)`,
+        opacity: entry,
+        transform: `translateY(${interpolate(entry, [0, 1], [30, 0])}px)`,
       }}
     >
-      <span
-        style={{
-          fontFamily: "sans-serif",
-          fontSize: 12,
-          fontWeight: 600,
-          color: "rgba(255,255,255,0.5)",
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-        }}
-      >
+      <span style={{ fontFamily: "sans-serif", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.12em" }}>
         {label}
       </span>
       {children}
@@ -91,12 +82,20 @@ const StatCard = ({
   );
 };
 
+const HeroHeight = ({ height, unit, color, fontSize, isPortrait }: { height: number, unit: string, color: string, fontSize: number, isPortrait: boolean }) => (
+  <div style={{ display: "flex", alignItems: "flex-end", gap: 20, flex: isPortrait ? 0 : 1 }}>
+    <WaveIcon size={fontSize * 0.55} color={color} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <AnimatedNumber value={height} decimals={1} suffix={unit} fontSize={fontSize} color="#ffffff" />
+      <span style={{ fontFamily: "sans-serif", fontSize: isPortrait ? 16 : 18, fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>Wave Height</span>
+    </div>
+  </div>
+);
+
 export const CurrentConditions = ({
   currentWaveHeight,
   currentWaveHeightUnit,
   currentPeriod,
-  currentDirection,
-  currentDirectionDegrees,
   waterTemp,
   waterTempUnit,
   windSpeed,
@@ -107,144 +106,32 @@ export const CurrentConditions = ({
   secondaryColor,
   backgroundColor,
 }: CurrentConditionsProps) => {
-  const { width, height, fps } = useVideoConfig();
-  const frame = useCurrentFrame();
-
-  const isPortrait = height > width;
-  const isSquare = width === height;
-
-  const titleEntry = spring({ frame, fps, config: { damping: 180, stiffness: 90 } });
-  const titleOpacity = interpolate(titleEntry, [0, 1], [0, 1]);
-  const titleY = interpolate(titleEntry, [0, 1], [-20, 0]);
-
-  const heroFontSize = isPortrait ? 120 : isSquare ? 100 : 140;
-  const statFontSize = isPortrait ? 36 : isSquare ? 32 : 44;
-  const padding = isPortrait ? 48 : isSquare ? 40 : 64;
+  const { width, height } = useVideoConfig();
+  const config = getLayoutConfig(width, height);
 
   return (
-    <AbsoluteFill
-      style={{
-        background: `linear-gradient(160deg, ${backgroundColor} 0%, ${secondaryColor}dd 100%)`,
-        padding,
-        display: "flex",
-        flexDirection: "column",
-        gap: isPortrait ? 24 : 20,
-        overflow: "hidden",
-      }}
-    >
-      {/* Title row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          opacity: titleOpacity,
-          transform: `translateY(${titleY}px)`,
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: "sans-serif",
-            fontSize: isPortrait ? 20 : 22,
-            fontWeight: 700,
-            color: primaryColor,
-            margin: 0,
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-          }}
-        >
-          Current Conditions
-        </h2>
-        <Sequence from={8} premountFor={fps}>
-          <ConditionBadge rating={overallRating} fontSize={14} />
-        </Sequence>
+    <AbsoluteFill style={{ background: `linear-gradient(160deg, ${backgroundColor} 0%, ${secondaryColor}dd 100%)`, padding: config.padding, display: "flex", flexDirection: "column", gap: config.gap, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2 style={{ fontFamily: "sans-serif", fontSize: config.isPortrait ? 20 : 22, fontWeight: 700, color: primaryColor, margin: 0, textTransform: "uppercase", letterSpacing: "0.15em" }}>Current Conditions</h2>
+        <ConditionBadge rating={overallRating} fontSize={14} />
       </div>
 
-      {/* Hero wave height */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 20,
-          flex: isPortrait ? 0 : 1,
-        }}
-      >
-        <WaveIcon size={heroFontSize * 0.55} color={primaryColor} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <Sequence from={4} premountFor={fps}>
-            <AnimatedNumber
-              value={currentWaveHeight}
-              decimals={1}
-              suffix={currentWaveHeightUnit}
-              fontSize={heroFontSize}
-              color="#ffffff"
-            />
-          </Sequence>
-          <span
-            style={{
-              fontFamily: "sans-serif",
-              fontSize: isPortrait ? 16 : 18,
-              fontWeight: 400,
-              color: "rgba(255,255,255,0.55)",
-            }}
-          >
-            Wave Height
-          </span>
-        </div>
-        <div
-          style={{
-            marginLeft: "auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <WindArrow degrees={currentDirectionDegrees} size={isPortrait ? 48 : 56} color={primaryColor} />
-          <span
-            style={{
-              fontFamily: "sans-serif",
-              fontSize: 13,
-              color: "rgba(255,255,255,0.6)",
-            }}
-          >
-            {currentDirection}
-          </span>
-        </div>
-      </div>
+      <HeroHeight height={currentWaveHeight} unit={currentWaveHeightUnit} color={primaryColor} fontSize={config.heroFontSize} isPortrait={config.isPortrait} />
 
-      {/* Stats grid */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: isPortrait ? "column" : "row",
-          gap: 12,
-          flex: 1,
-        }}
-      >
-        <Sequence from={6} premountFor={fps}>
-          <StatCard label="Period" delay={0} primaryColor={primaryColor} backgroundColor={backgroundColor}>
-            <AnimatedNumber value={currentPeriod} suffix="s" fontSize={statFontSize} color="#ffffff" />
-          </StatCard>
-        </Sequence>
-
-        <Sequence from={10} premountFor={fps}>
-          <StatCard label="Wind" delay={0} primaryColor={primaryColor} backgroundColor={backgroundColor}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <AnimatedNumber value={windSpeed} suffix="kts" fontSize={statFontSize} color="#ffffff" />
-              <WindArrow degrees={windDirectionDegrees} size={32} color={primaryColor} />
-              <span style={{ fontFamily: "sans-serif", fontSize: 15, color: "rgba(255,255,255,0.7)" }}>
-                {windDirection}
-              </span>
-            </div>
-          </StatCard>
-        </Sequence>
-
-        <Sequence from={14} premountFor={fps}>
-          <StatCard label="Water Temp" delay={0} primaryColor={primaryColor} backgroundColor={backgroundColor}>
-            <AnimatedNumber value={waterTemp} suffix={`°${waterTempUnit}`} fontSize={statFontSize} color="#ffffff" />
-          </StatCard>
-        </Sequence>
+      <div style={{ display: "flex", flexDirection: config.isPortrait ? "column" : "row", gap: 12, flex: 1 }}>
+        <StatCard label="Period" primaryColor={primaryColor} statFontSize={config.statFontSize}>
+          <AnimatedNumber value={currentPeriod} suffix="s" fontSize={config.statFontSize} color="#ffffff" />
+        </StatCard>
+        <StatCard label="Wind" primaryColor={primaryColor} statFontSize={config.statFontSize} delay={10}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <AnimatedNumber value={windSpeed} suffix="kts" fontSize={config.statFontSize} color="#ffffff" />
+            <WindArrow degrees={windDirectionDegrees} size={32} color={primaryColor} />
+            <span style={{ fontFamily: "sans-serif", fontSize: 15, color: "rgba(255,255,255,0.7)" }}>{windDirection}</span>
+          </div>
+        </StatCard>
+        <StatCard label="Water Temp" primaryColor={primaryColor} statFontSize={config.statFontSize} delay={20}>
+          <AnimatedNumber value={waterTemp} suffix={`°${waterTempUnit}`} fontSize={config.statFontSize} color="#ffffff" />
+        </StatCard>
       </div>
     </AbsoluteFill>
   );

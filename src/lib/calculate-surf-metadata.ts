@@ -1,5 +1,5 @@
 import { CalculateMetadataFunction } from "remotion";
-import { SurfForecastProps } from "../schemas/surf-forecast.js";
+import { SurfForecastProps } from "../schemas/surf-forecast";
 
 const FPS = 30;
 

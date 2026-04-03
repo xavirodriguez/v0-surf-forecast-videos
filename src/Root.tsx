@@ -1,13 +1,13 @@
 import { Composition, Folder, Still } from "remotion";
-import { surfForecastSchema, defaultSurfData } from "./schemas/surf-forecast.js";
-import { calculateSurfMetadata } from "./lib/calculate-surf-metadata.js";
-import { SurfForecast } from "./components/SurfForecast.js";
-import { SurfThumbnail } from "./components/SurfThumbnail.js";
+import { surfForecastSchema, defaultSurfData } from "./schemas/surf-forecast";
+import { calculateSurfMetadata } from "./lib/calculate-surf-metadata";
+import { SurfForecast } from "./components/SurfForecast";
+import { SurfThumbnail } from "./components/SurfThumbnail";
 
 export const RemotionRoot = () => {
   return (
     <>
-      <Folder name="Surf Forecast Videos">
+      <Folder name="surf-forecast-videos">
         {/* Landscape — YouTube / Web */}
         <Composition
           id="surf-forecast-landscape"
@@ -74,7 +74,7 @@ export const RemotionRoot = () => {
         />
       </Folder>
 
-      <Folder name="Surf Forecast Thumbnails">
+      <Folder name="surf-forecast-thumbnails">
         {/* Still thumbnail */}
         <Still
           id="surf-forecast-thumbnail"
