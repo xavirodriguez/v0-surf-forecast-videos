@@ -167,7 +167,6 @@ async function main() {
     output: stillOutputLocation,
     inputProps,
     imageFormat: "jpeg",
-    quality: 92,
   });
 
   console.log(`  Saved → ${stillOutputLocation}`);
