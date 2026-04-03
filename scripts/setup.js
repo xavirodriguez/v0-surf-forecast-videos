@@ -5,7 +5,7 @@ import { execSync } from 'child_process';
 console.log('Installing Remotion dependencies...');
 
 try {
-  execSync('pnpm install', { stdio: 'inherit' });
+  execSync('npm install', { stdio: 'inherit' });
   console.log('✓ Dependencies installed successfully');
 } catch (error) {
   console.error('✗ Failed to install dependencies');
@@ -13,4 +13,4 @@ try {
 }
 
 console.log('\n✓ Setup complete! You can now render videos with:');
-console.log('  pnpm remotion render src/index.ts SurfForecast output.mp4');
+console.log('  npm run remotion render src/index.ts SurfForecast output.mp4');
