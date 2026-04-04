@@ -21,6 +21,21 @@ export const TideChart = ({
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
+  if (tides.length === 0) {
+    return (
+      <AbsoluteFill
+        style={{
+          background: `linear-gradient(160deg, ${backgroundColor} 0%, ${secondaryColor}cc 100%)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <h2 style={{ color: "white", fontFamily: "sans-serif" }}>Tide data unavailable</h2>
+      </AbsoluteFill>
+    );
+  }
+
   const isPortrait = height > width;
   const isSquare = width === height;
   const padding = isPortrait ? 48 : isSquare ? 40 : 64;
@@ -36,8 +51,9 @@ export const TideChart = ({
   const plotW = chartW - svgPadX * 2;
   const plotH = chartH - svgPadY * 2;
 
-  const maxH = Math.max(...tides.map((t) => t.height));
-  const minH = Math.min(...tides.map((t) => t.height));
+  const heights = tides.map((t) => t.height);
+  const maxH = Math.max(...heights);
+  const minH = Math.min(...heights);
   const range = maxH - minH || 1;
 
   // Build smooth SVG path through tide points
