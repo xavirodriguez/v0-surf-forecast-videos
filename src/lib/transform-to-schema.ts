@@ -4,6 +4,7 @@ import { TideEvent } from "./noaa-tides-client";
 import { SpotMeta } from "./spots";
 import { degreesToCardinal } from "./degrees-to-cardinal";
 import { ratingFromWaveData } from "./rating-calculator";
+import { UnitConverter } from "./unit-converter";
 
 interface TransformContext {
   marineData: MarineData;
@@ -12,38 +13,42 @@ interface TransformContext {
   startHourIndex: number;
 }
 
-/**
- * Transform API data to SurfForecastProps schema
- */
-export function transformToSurfProps(
-  marineData: MarineData,
-  windData: WeatherData,
-  tidesData: TideEvent[],
-  waterTemp: number | null,
-  spotMeta: SpotMeta,
-  targetDate: string
-): SurfForecastProps {
-  const startHourIndex = getStartHourIndex(targetDate);
-  const context: TransformContext = { marineData, windData, spotMeta, startHourIndex };
+export interface TransformParams {
+  marineData: MarineData;
+  windData: WeatherData;
+  tidesData: TideEvent[];
+  waterTemp: number | undefined;
+  spotMeta: SpotMeta;
+  targetDate: string;
+}
 
-  const hourlyForecast = buildHourlyForecast(context);
+const converter = new UnitConverter();
+
+export function transformToSurfProps(params: TransformParams): SurfForecastProps {
+  const { marineData, windData, tidesData, waterTemp, spotMeta, targetDate } = params;
+  const context: TransformContext = {
+    marineData,
+    windData,
+    spotMeta,
+    startHourIndex: getStartHourIndex(targetDate),
+  };
+
   const currentConditions = calculateCurrentConditions(context, waterTemp);
-  const swellData = buildSwellData(context);
-  const tides = transformTides(tidesData, spotMeta.currentWaveHeightUnit);
+  const overallRating = ratingFromWaveData(
+    currentConditions.rawHeight,
+    currentConditions.currentPeriod,
+    currentConditions.windSpeed
+  );
 
   return {
     spotName: spotMeta.spotName,
     spotLocation: spotMeta.spotLocation,
     date: targetDate,
     ...currentConditions,
-    overallRating: ratingFromWaveData(
-      currentConditions.rawHeight,
-      currentConditions.currentPeriod,
-      currentConditions.windSpeed
-    ),
-    hourlyForecast,
-    swellData,
-    tides,
+    overallRating,
+    hourlyForecast: buildHourlyForecast(context),
+    swellData: buildSwellData(context),
+    tides: transformTides(tidesData, spotMeta.currentWaveHeightUnit),
     primaryColor: spotMeta.primaryColor,
     secondaryColor: spotMeta.secondaryColor,
     backgroundColor: spotMeta.backgroundColor,
@@ -57,45 +62,43 @@ function getStartHourIndex(targetDate: string): number {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const target = new Date(targetDate);
 
-  if (target.getTime() === today.getTime()) {
-    return now.getHours();
-  }
-  if (target.getTime() > today.getTime()) {
-    return 6; // Default to 6 AM for future dates
-  }
-  return 0;
+  if (target.getTime() === today.getTime()) return now.getHours();
+  return target.getTime() > today.getTime() ? 6 : 0;
 }
 
 function buildHourlyForecast(context: TransformContext) {
   const { marineData, windData, spotMeta, startHourIndex } = context;
-  const isFeet = spotMeta.currentWaveHeightUnit === "ft";
 
   return Array.from({ length: 8 })
     .map((_, i) => {
-      const idx = startHourIndex + i;
-      if (idx >= marineData.hourly.wave_height.length) return null;
+      const index = startHourIndex + i;
+      if (index >= marineData.hourly.wave_height.length) return undefined;
 
-      const waveHeight = marineData.hourly.wave_height[idx];
-      const period = marineData.hourly.wave_period[idx];
-      const windSpeed = windData.hourly.windspeed_10m[idx];
+      const waveHeight = marineData.hourly.wave_height[index];
+      const period = marineData.hourly.wave_period[index];
+      const windSpeed = windData.hourly.windspeed_10m[index];
 
       return {
-        hour: new Date(marineData.hourly.time[idx]).toLocaleString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        waveHeight: isFeet ? waveHeight * 3.28084 : waveHeight,
+        hour: formatTime(marineData.hourly.time[index]),
+        waveHeight: converter.convertHeight(waveHeight, spotMeta.currentWaveHeightUnit),
         period,
         windSpeed,
-        windDirection: degreesToCardinal(windData.hourly.winddirection_10m[idx]),
+        windDirection: degreesToCardinal(windData.hourly.winddirection_10m[index]),
         rating: ratingFromWaveData(waveHeight, period, windSpeed),
       };
     })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+    .filter((item): item is NonNullable<typeof item> => item !== undefined);
 }
 
-function calculateCurrentConditions(context: TransformContext, waterTemp: number | null) {
+function formatTime(timeString: string): string {
+  return new Date(timeString).toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function calculateCurrentConditions(context: TransformContext, waterTemp: number | undefined) {
   const { marineData, windData, spotMeta, startHourIndex } = context;
   const h = marineData.hourly;
 
@@ -103,16 +106,15 @@ function calculateCurrentConditions(context: TransformContext, waterTemp: number
   const currentPeriod = (h.wave_period[startHourIndex] + (h.wave_period[startHourIndex + 1] ?? h.wave_period[startHourIndex])) / 2;
 
   const tempCelsius = waterTemp ?? windData.hourly.temperature_2m[startHourIndex];
-  const displayTemp = spotMeta.waterTempUnit === "F" ? (tempCelsius * 9) / 5 + 32 : tempCelsius;
 
   return {
     rawHeight,
-    currentWaveHeight: spotMeta.currentWaveHeightUnit === "ft" ? rawHeight * 3.28084 : rawHeight,
+    currentWaveHeight: converter.convertHeight(rawHeight, spotMeta.currentWaveHeightUnit),
     currentWaveHeightUnit: spotMeta.currentWaveHeightUnit,
     currentPeriod: Math.round(currentPeriod * 10) / 10,
     currentDirection: degreesToCardinal(h.wave_direction[startHourIndex]),
     currentDirectionDegrees: h.wave_direction[startHourIndex],
-    waterTemp: Math.round(displayTemp * 10) / 10,
+    waterTemp: Math.round(converter.convertTemp(tempCelsius, spotMeta.waterTempUnit) * 10) / 10,
     waterTempUnit: spotMeta.waterTempUnit,
     windSpeed: Math.round(windData.hourly.windspeed_10m[startHourIndex] * 10) / 10,
     windDirection: degreesToCardinal(windData.hourly.winddirection_10m[startHourIndex]),
@@ -123,22 +125,20 @@ function calculateCurrentConditions(context: TransformContext, waterTemp: number
 function buildSwellData(context: TransformContext) {
   const { marineData, startHourIndex } = context;
   const h = marineData.hourly;
-  const swellData = [];
 
-  if (h.swell_wave_height[startHourIndex] > 0) {
-    swellData.push({
-      height: h.swell_wave_height[startHourIndex],
-      period: h.swell_wave_period[startHourIndex],
-      direction: degreesToCardinal(h.swell_wave_direction[startHourIndex]),
-      directionDegrees: h.swell_wave_direction[startHourIndex],
-    });
-  }
-  return swellData;
+  if (h.swell_wave_height[startHourIndex] <= 0) return [];
+
+  return [{
+    height: h.swell_wave_height[startHourIndex],
+    period: h.swell_wave_period[startHourIndex],
+    direction: degreesToCardinal(h.swell_wave_direction[startHourIndex]),
+    directionDegrees: h.swell_wave_direction[startHourIndex],
+  }];
 }
 
 function transformTides(tidesData: TideEvent[], unit: "ft" | "m") {
   return tidesData.slice(0, 4).map((tide) => ({
     ...tide,
-    height: unit === "ft" ? tide.height * 3.28084 : tide.height,
+    height: converter.convertHeight(tide.height, unit),
   }));
 }

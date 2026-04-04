@@ -1,6 +1,3 @@
-/**
- * Spot metadata for rendering and fetching
- */
 export type SpotMeta = {
   spotName: string;
   spotLocation: string;
@@ -19,9 +16,6 @@ export type SpotExample = SpotMeta & {
   lon: number;
 };
 
-/**
- * Pre-defined surf spots for easy testing
- */
 export const spotExamples: SpotExample[] = [
   {
     spotName: 'Playa de Zurriola',
@@ -62,13 +56,16 @@ export const spotExamples: SpotExample[] = [
   },
 ];
 
-/**
- * Find a spot example by name
- */
-export function getSpotByName(name: string): SpotExample | undefined {
-  return spotExamples.find(
-    (spot) =>
-      spot.spotName.toLowerCase() === name.toLowerCase() ||
-      spot.spotLocation.toLowerCase() === name.toLowerCase()
+export function getSpotByName(name: string): SpotExample {
+  const spot = spotExamples.find(
+    (s) =>
+      s.spotName.toLowerCase() === name.toLowerCase() ||
+      s.spotLocation.toLowerCase() === name.toLowerCase()
   );
+
+  if (!spot) {
+    throw new Error(`Spot not found: ${name}`);
+  }
+
+  return spot;
 }

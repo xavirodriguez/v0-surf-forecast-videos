@@ -12,49 +12,51 @@ const RatingEnum = z.enum([
 
 export type SurfRating = z.infer<typeof RatingEnum>;
 
-interface RatingRule {
-  rating: SurfRating;
-  test: (height: number, period: number, windSpeed: number) => boolean;
+interface RatingConditions {
+  height: number;
+  period: number;
+  windSpeed: number;
 }
 
-const RATING_RULES: RatingRule[] = [
+const RATING_RULES = [
   {
-    rating: "epic",
-    test: (h, p, w) => h >= 6 && p >= 14 && w < 10,
+    rating: "epic" as SurfRating,
+    isSatisfiedBy: ({ height, period, windSpeed }: RatingConditions) =>
+      height >= 6 && period >= 14 && windSpeed < 10,
   },
   {
-    rating: "good",
-    test: (h, p, w) => h >= 4 && p >= 12 && w < 15,
+    rating: "good" as SurfRating,
+    isSatisfiedBy: ({ height, period, windSpeed }: RatingConditions) =>
+      height >= 4 && period >= 12 && windSpeed < 15,
   },
   {
-    rating: "fair-good",
-    test: (h, p) => h >= 3 && p >= 10,
+    rating: "fair-good" as SurfRating,
+    isSatisfiedBy: ({ height, period }: RatingConditions) =>
+      height >= 3 && period >= 10,
   },
   {
-    rating: "fair",
-    test: (h, p) => h >= 2 && p >= 8,
+    rating: "fair" as SurfRating,
+    isSatisfiedBy: ({ height, period }: RatingConditions) =>
+      height >= 2 && period >= 8,
   },
   {
-    rating: "poor-fair",
-    test: (h) => h >= 1,
+    rating: "poor-fair" as SurfRating,
+    isSatisfiedBy: ({ height }: RatingConditions) => height >= 1,
   },
   {
-    rating: "poor",
-    test: (h) => h > 0,
+    rating: "poor" as SurfRating,
+    isSatisfiedBy: ({ height }: RatingConditions) => height > 0,
   },
 ];
 
-/**
- * Calculate surf rating based on wave height, period, and wind speed.
- * Returns the highest matching rating based on defined rules.
- */
 export function ratingFromWaveData(
   height: number,
   period: number,
   windSpeed: number
 ): SurfRating {
+  const conditions = { height, period, windSpeed };
   const matchedRule = RATING_RULES.find((rule) =>
-    rule.test(height, period, windSpeed)
+    rule.isSatisfiedBy(conditions)
   );
 
   return matchedRule?.rating ?? "flat";
