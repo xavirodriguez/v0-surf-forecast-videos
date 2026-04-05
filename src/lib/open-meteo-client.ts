@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Type definitions for Open-Meteo Marine API
 const MarineDataSchema = z.object({
   hourly: z.object({
     time: z.array(z.string()),
@@ -16,7 +15,6 @@ const MarineDataSchema = z.object({
 
 export type MarineData = z.infer<typeof MarineDataSchema>;
 
-// Type definitions for Open-Meteo Weather API
 const WeatherDataSchema = z.object({
   hourly: z.object({
     time: z.array(z.string()),
@@ -28,64 +26,58 @@ const WeatherDataSchema = z.object({
 
 export type WeatherData = z.infer<typeof WeatherDataSchema>;
 
-/**
- * Fetch marine data (waves, swell) from Open-Meteo
- */
-export async function fetchMarineData(
-  lat: number,
-  lon: number
-): Promise<MarineData> {
-  const params = new URLSearchParams({
-    latitude: lat.toString(),
-    longitude: lon.toString(),
-    hourly:
-      'wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height',
-    forecast_days: '3',
-    timezone: 'auto',
-  });
+export class OpenMeteoClient {
+  private readonly MARINE_BASE_URL = 'https://marine-api.open-meteo.com/v1/marine';
+  private readonly WEATHER_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 
-  const url = `https://marine-api.open-meteo.com/v1/marine?${params}`;
+  async fetchMarineData(lat: number, lon: number): Promise<MarineData> {
+    const url = this.buildMarineUrl(lat, lon);
+    console.log(`[v0] Fetching marine data from: ${url}`);
 
-  console.log(`[v0] Fetching marine data from: ${url}`);
+    const response = await fetch(url);
+    this.ensureResponseOk(response, 'marine data');
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch marine data: ${response.status} ${response.statusText}`
-    );
+    const data = await response.json();
+    return MarineDataSchema.parse(data);
   }
 
-  const data = await response.json();
-  return MarineDataSchema.parse(data);
-}
+  async fetchWindData(lat: number, lon: number): Promise<WeatherData> {
+    const url = this.buildWeatherUrl(lat, lon);
+    console.log(`[v0] Fetching wind data from: ${url}`);
 
-/**
- * Fetch wind and weather data from Open-Meteo
- */
-export async function fetchWindData(
-  lat: number,
-  lon: number
-): Promise<WeatherData> {
-  const params = new URLSearchParams({
-    latitude: lat.toString(),
-    longitude: lon.toString(),
-    hourly: 'windspeed_10m,winddirection_10m,temperature_2m',
-    forecast_days: '3',
-    timezone: 'auto',
-    wind_speed_unit: 'mph',
-  });
+    const response = await fetch(url);
+    this.ensureResponseOk(response, 'wind data');
 
-  const url = `https://api.open-meteo.com/v1/forecast?${params}`;
-
-  console.log(`[v0] Fetching wind data from: ${url}`);
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch wind data: ${response.status} ${response.statusText}`
-    );
+    const data = await response.json();
+    return WeatherDataSchema.parse(data);
   }
 
-  const data = await response.json();
-  return WeatherDataSchema.parse(data);
+  private buildMarineUrl(lat: number, lon: number): string {
+    const params = new URLSearchParams({
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      hourly: 'wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height',
+      forecast_days: '3',
+      timezone: 'auto',
+    });
+    return `${this.MARINE_BASE_URL}?${params}`;
+  }
+
+  private buildWeatherUrl(lat: number, lon: number): string {
+    const params = new URLSearchParams({
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      hourly: 'windspeed_10m,winddirection_10m,temperature_2m',
+      forecast_days: '3',
+      timezone: 'auto',
+      wind_speed_unit: 'mph',
+    });
+    return `${this.WEATHER_BASE_URL}?${params}`;
+  }
+
+  private ensureResponseOk(response: Response, dataType: string): void {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${dataType}: ${response.status} ${response.statusText}`);
+    }
+  }
 }

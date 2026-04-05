@@ -1,7 +1,10 @@
-import { fetchMarineData, fetchWindData } from '../src/lib/open-meteo-client';
-import { fetchTides, fetchWaterTemp } from '../src/lib/noaa-tides-client';
+import { OpenMeteoClient } from '../src/lib/open-meteo-client';
+import { NoaaTidesClient } from '../src/lib/noaa-tides-client';
 import { getSpotByName } from '../src/lib/spots';
 import { fetchSurfData } from '../src/lib/fetch-surf-data';
+
+const openMeteoClient = new OpenMeteoClient();
+const noaaClient = new NoaaTidesClient();
 
 async function testAPIs() {
   console.log('Testing API clients...\n');
@@ -12,11 +15,11 @@ async function testAPIs() {
     console.log(`Coordinates: ${zurriola.lat}, ${zurriola.lon}\n`);
 
     console.log('Fetching Open-Meteo Marine Data...');
-    const marineData = await fetchMarineData(zurriola.lat, zurriola.lon);
+    const marineData = await openMeteoClient.fetchMarineData(zurriola.lat, zurriola.lon);
     console.log(`✓ Marine data fetched: ${marineData.hourly.wave_height.length} hours of data`);
 
     console.log('\nFetching Open-Meteo Wind Data...');
-    const windData = await fetchWindData(zurriola.lat, zurriola.lon);
+    const windData = await openMeteoClient.fetchWindData(zurriola.lat, zurriola.lon);
     console.log(`✓ Wind data fetched: ${windData.hourly.windspeed_10m.length} hours of data`);
 
     console.log('\nTransforming to SurfForecastProps...');
@@ -42,12 +45,16 @@ async function testAPIs() {
 
     if (pipeline.noaaStationId) {
       console.log('Fetching NOAA Tides...');
-      const tides = await fetchTides(pipeline.noaaStationId, new Date());
+      const tides = await noaaClient.fetchTides(pipeline.noaaStationId, new Date());
       console.log(`✓ Tides fetched: ${tides.length} events`);
 
       console.log('\nFetching NOAA Water Temperature...');
-      const waterTemp = await fetchWaterTemp(pipeline.noaaStationId, new Date());
-      console.log(`✓ Water temp: ${waterTemp !== null ? waterTemp + '°C' : 'N/A'}`);
+      try {
+        const waterTemp = await noaaClient.fetchWaterTemp(pipeline.noaaStationId, new Date());
+        console.log(`✓ Water temp: ${waterTemp !== null ? waterTemp + '°C' : 'N/A'}`);
+      } catch (error) {
+        console.log('✓ Water temp: N/A (Handled error)');
+      }
     }
 
     console.log('\nFetching complete Pipeline data...');

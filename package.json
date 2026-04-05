@@ -5,6 +5,7 @@
   "scripts": {
     "studio": "remotion studio",
     "render": "ts-node --project tsconfig.json src/render.ts",
+    "test:apis": "ts-node --project tsconfig.json scripts/test-apis.ts",
     "build": "remotion bundle"
   },
   "dependencies": {
