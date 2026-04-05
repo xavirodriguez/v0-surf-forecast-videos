@@ -1,6 +1,6 @@
 import { SurfForecastProps, surfForecastSchema } from '../schemas/surf-forecast';
-import { fetchMarineData, fetchWindData, MarineData, WeatherData } from './open-meteo-client';
-import { fetchTides, fetchWaterTemp, TideEvent } from './noaa-tides-client';
+import { OpenMeteoClient, MarineData, WeatherData } from './open-meteo-client';
+import { NoaaTidesClient, TideEvent } from './noaa-tides-client';
 import { SpotMeta } from './spots';
 import { transformToSurfProps } from './transform-to-schema';
 
@@ -10,14 +10,21 @@ export interface FetchParams {
   spotMeta: SpotMeta;
 }
 
-export async function fetchSurfData(params: FetchParams): Promise<SurfForecastProps> {
+interface FetchClients {
+  openMeteo: OpenMeteoClient;
+  noaa: NoaaTidesClient;
+}
+
+export async function fetchSurfData(
+  params: FetchParams,
+  clients: FetchClients = { openMeteo: new OpenMeteoClient(), noaa: new NoaaTidesClient() }
+): Promise<SurfForecastProps> {
   const { lat, lon, spotMeta } = params;
-  const { marineData, windData } = await fetchAtmosphericData(lat, lon);
-  const { tides, waterTemp } = await fetchNoaaData(spotMeta.noaaStationId);
+  const atmosphericData = await fetchAtmosphericData(lat, lon, clients.openMeteo);
+  const { tides, waterTemp } = await fetchNoaaData(spotMeta.noaaStationId, clients.noaa);
 
   const props = transformToSurfProps({
-    marineData,
-    windData,
+    ...atmosphericData,
     tidesData: tides,
     waterTemp,
     spotMeta,
@@ -27,33 +34,37 @@ export async function fetchSurfData(params: FetchParams): Promise<SurfForecastPr
   return surfForecastSchema.parse(props);
 }
 
-async function fetchAtmosphericData(lat: number, lon: number): Promise<{
+async function fetchAtmosphericData(
+  lat: number,
+  lon: number,
+  client: OpenMeteoClient
+): Promise<{
   marineData: MarineData;
   windData: WeatherData;
 }> {
   const [marineData, windData] = await Promise.all([
-    fetchMarineData(lat, lon),
-    fetchWindData(lat, lon),
+    client.fetchMarineData(lat, lon),
+    client.fetchWindData(lat, lon),
   ]);
   return { marineData, windData };
 }
 
-async function fetchNoaaData(stationId?: string): Promise<{
+async function fetchNoaaData(
+  stationId: string | undefined,
+  client: NoaaTidesClient
+): Promise<{
   tides: TideEvent[];
   waterTemp: number | undefined;
 }> {
-  if (!stationId) {
-    return { tides: [], waterTemp: undefined };
-  }
+  if (!stationId) return { tides: [], waterTemp: undefined };
 
   try {
     const [tides, waterTemp] = await Promise.all([
-      fetchTides(stationId, new Date()),
-      fetchWaterTemp(stationId, new Date()),
+      client.fetchTides(stationId, new Date()),
+      client.fetchWaterTemp(stationId, new Date()),
     ]);
-    return { tides, waterTemp: waterTemp ?? undefined };
+    return { tides, waterTemp };
   } catch (error) {
-    console.warn(`[v0] Failed to fetch NOAA data: ${error}`);
     return { tides: [], waterTemp: undefined };
   }
 }
