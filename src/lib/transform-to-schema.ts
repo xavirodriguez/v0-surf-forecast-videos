@@ -44,19 +44,25 @@ export function transformToSurfProps(params: TransformParams): SurfForecastProps
   const overallRating = calculateOverallRating(currentConditions);
 
   return {
-    spotName: params.spotMeta.spotName,
-    spotLocation: params.spotMeta.spotLocation,
+    ...extractSpotMetadata(params.spotMeta),
     date: params.targetDate,
     ...currentConditions,
     overallRating,
     hourlyForecast: buildHourlyForecast(context),
     swellData: buildSwellData(context),
     tides: transformTides(params.tidesData, params.spotMeta.currentWaveHeightUnit),
-    primaryColor: params.spotMeta.primaryColor,
-    secondaryColor: params.spotMeta.secondaryColor,
-    backgroundColor: params.spotMeta.backgroundColor,
-    brandName: params.spotMeta.brandName,
-    logoUrl: params.spotMeta.logoUrl,
+  };
+}
+
+function extractSpotMetadata(spotMeta: SpotMeta) {
+  return {
+    spotName: spotMeta.spotName,
+    spotLocation: spotMeta.spotLocation,
+    primaryColor: spotMeta.primaryColor,
+    secondaryColor: spotMeta.secondaryColor,
+    backgroundColor: spotMeta.backgroundColor,
+    brandName: spotMeta.brandName,
+    logoUrl: spotMeta.logoUrl,
   };
 }
 
@@ -134,13 +140,31 @@ function calculateCurrentConditions(context: TransformContext, waterTemp: number
     currentWaveHeight: converter.convertHeight(rawHeight, spotMeta.currentWaveHeightUnit),
     currentWaveHeightUnit: spotMeta.currentWaveHeightUnit,
     currentPeriod: roundToOneDecimal(currentPeriod),
-    currentDirection: degreesToCardinal(h.wave_direction[startHourIndex]),
-    currentDirectionDegrees: h.wave_direction[startHourIndex],
-    waterTemp: roundToOneDecimal(converter.convertTemp(tempCelsius, spotMeta.waterTempUnit)),
-    waterTempUnit: spotMeta.waterTempUnit,
-    windSpeed: roundToOneDecimal(windData.hourly.windspeed_10m[startHourIndex]),
-    windDirection: degreesToCardinal(windData.hourly.winddirection_10m[startHourIndex]),
-    windDirectionDegrees: windData.hourly.winddirection_10m[startHourIndex],
+    ...calculateCurrentWaveDetails(h, startHourIndex),
+    ...calculateCurrentWaterTemp(tempCelsius, spotMeta.waterTempUnit),
+    ...calculateCurrentWindDetails(windData, startHourIndex),
+  };
+}
+
+function calculateCurrentWaveDetails(hourly: MarineData['hourly'], index: number) {
+  return {
+    currentDirection: degreesToCardinal(hourly.wave_direction[index]),
+    currentDirectionDegrees: hourly.wave_direction[index],
+  };
+}
+
+function calculateCurrentWaterTemp(tempCelsius: number, unit: 'C' | 'F') {
+  return {
+    waterTemp: roundToOneDecimal(converter.convertTemp(tempCelsius, unit)),
+    waterTempUnit: unit,
+  };
+}
+
+function calculateCurrentWindDetails(windData: WeatherData, index: number) {
+  return {
+    windSpeed: roundToOneDecimal(windData.hourly.windspeed_10m[index]),
+    windDirection: degreesToCardinal(windData.hourly.winddirection_10m[index]),
+    windDirectionDegrees: windData.hourly.winddirection_10m[index],
   };
 }
 

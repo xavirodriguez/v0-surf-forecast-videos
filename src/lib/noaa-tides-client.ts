@@ -30,15 +30,9 @@ export class NoaaTidesClient {
 
   async fetchTides(stationId: string, date: Date): Promise<TideEvent[]> {
     const url = this.buildTidesUrl(stationId, date);
-    console.log(`[v0] Fetching tides from NOAA: ${stationId}`);
-
     try {
-      const response = await fetch(url);
-      if (!response.ok) return [];
-
-      const data = await response.json();
-      if (data.error) return [];
-
+      const data = await this.fetchJson(url, `tides for station ${stationId}`);
+      if (this.hasError(data)) return [];
       return this.parseTidePredictions(data);
     } catch (error) {
       console.warn(`[v0] Failed to fetch tides: ${error}`);
@@ -48,19 +42,30 @@ export class NoaaTidesClient {
 
   async fetchWaterTemp(stationId: string, date: Date): Promise<number | undefined> {
     const url = this.buildWaterTempUrl(stationId, date);
-    console.log(`[v0] Fetching water temperature from NOAA: ${stationId}`);
-
     try {
-      const response = await fetch(url);
-      if (!response.ok) return undefined;
-
-      const data = await response.json();
-      if (data.error) return undefined;
-
+      const data = await this.fetchJson(url, `water temp for station ${stationId}`);
+      if (this.hasError(data)) return undefined;
       return this.parseWaterTemp(data);
     } catch (error) {
       console.warn(`[v0] Failed to fetch water temperature: ${error}`);
       return undefined;
+    }
+  }
+
+  private hasError(data: unknown): boolean {
+    return !data || (typeof data === 'object' && 'error' in data);
+  }
+
+  private async fetchJson(url: string, description: string): Promise<unknown> {
+    console.log(`[v0] Fetching ${description} from NOAA`);
+    const response = await fetch(url);
+    this.ensureResponseOk(response, description);
+    return response.json();
+  }
+
+  private ensureResponseOk(response: Response, description: string): void {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${description}: ${response.status} ${response.statusText}`);
     }
   }
 
