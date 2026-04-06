@@ -85,7 +85,8 @@ const TideSvg = ({ tides, primaryColor, secondaryColor }: { tides: TideEvent[], 
   const chartW = width - padding * 2;
   const chartH = height > width ? 260 : width === height ? 240 : 300;
   const { points, areaPath, linePath } = getChartPaths(tides, chartW, chartH);
-  const lineOpacity = interpolate(spring({ frame: useCurrentFrame(), fps: useVideoConfig().fps }), [0, 1], [0, 1]);
+  const springConfig = { damping: 160, stiffness: 50 };
+  const lineOpacity = interpolate(spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.2), fps: useVideoConfig().fps, config: springConfig }), [0, 1], [0, 1]);
 
   return (
     <svg width={chartW} height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} style={{ opacity: lineOpacity }}>
@@ -110,7 +111,7 @@ const getChartPaths = (tides: TideEvent[], chartW: number, chartH: number) => {
 };
 
 const TideSvgDefs = ({ primaryColor, chartW, chartH }: { primaryColor: string, chartW: number, chartH: number }) => {
-  const lineProgress = interpolate(spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.2), fps: useVideoConfig().fps }), [0, 1], [0, chartW]);
+  const lineProgress = interpolate(spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.2), fps: useVideoConfig().fps, config: { damping: 160, stiffness: 50 } }), [0, 1], [0, chartW]);
   return (
     <defs>
       <linearGradient id="tideAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -135,7 +136,7 @@ const TideReferenceLines = ({ chartW, chartH }: { chartW: number, chartH: number
 };
 
 const TidePoint = ({ pt, tide, index, primaryColor, secondaryColor }: { pt: { x: number, y: number }, tide: TideEvent, index: number, primaryColor: string, secondaryColor: string }) => {
-  const ptEntry = spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.5 - index * useVideoConfig().fps * 0.12), fps: useVideoConfig().fps });
+  const ptEntry = spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.5 - index * useVideoConfig().fps * 0.12), fps: useVideoConfig().fps, config: { damping: 200, stiffness: 100 } });
   const isHigh = tide.type === "high";
   const labelY = isHigh ? pt.y - 22 : pt.y + 30;
   return (
@@ -159,7 +160,7 @@ const TideCards = ({ tides, primaryColor, secondaryColor, backgroundColor }: { t
 };
 
 const TideCard = ({ tide, index, isNext, primaryColor, backgroundColor }: { tide: TideEvent, index: number, isNext: boolean, primaryColor: string, backgroundColor: string }) => {
-  const cardEntry = spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.7 - index * useVideoConfig().fps * 0.1), fps: useVideoConfig().fps });
+  const cardEntry = spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.7 - index * useVideoConfig().fps * 0.1), fps: useVideoConfig().fps, config: { damping: 160, stiffness: 80 } });
   const cardOpacity = interpolate(cardEntry, [0, 1], [0, 1]), cardY = interpolate(cardEntry, [0, 1], [20, 0]);
   return (
     <div style={getTideCardStyle(isNext, primaryColor, cardOpacity, cardY)}>
