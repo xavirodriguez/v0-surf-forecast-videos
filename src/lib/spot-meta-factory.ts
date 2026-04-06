@@ -8,7 +8,18 @@ export class SpotMetaFactory {
     }
 
     this.validateCustomSpot(cliArgs);
+    return this.createCustomSpot(cliArgs);
+  }
 
+  private validateCustomSpot(cliArgs: CliArgs): void {
+    if (!cliArgs.lat || !cliArgs.lon) {
+      throw new Error(
+        "Error: --live requires either --spot <name> or both --lat and --lon"
+      );
+    }
+  }
+
+  private createCustomSpot(cliArgs: CliArgs): SpotMeta {
     return {
       spotName: cliArgs.spotName ?? "Custom Spot",
       spotLocation: cliArgs.location ?? `${cliArgs.lat}, ${cliArgs.lon}`,
@@ -20,14 +31,6 @@ export class SpotMetaFactory {
       waterTempUnit: cliArgs.tempUnit ?? "C",
       noaaStationId: cliArgs.noaaStationId,
     };
-  }
-
-  private validateCustomSpot(cliArgs: CliArgs) {
-    if (!cliArgs.lat || !cliArgs.lon) {
-      throw new Error(
-        "Error: --live requires either --spot <name> or both --lat and --lon"
-      );
-    }
   }
 
   getCoordinates(cliArgs: CliArgs, spotMeta: SpotMeta): { lat: number; lon: number } {

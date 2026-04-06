@@ -15,23 +15,38 @@ interface FetchClients {
   noaa: NoaaTidesClient;
 }
 
+interface NoaaData {
+  tides: TideEvent[];
+  waterTemp?: number;
+}
+
 export async function fetchSurfData(
   params: FetchParams,
-  clients: FetchClients = { openMeteo: new OpenMeteoClient(), noaa: new NoaaTidesClient() }
+  clients: FetchClients = createDefaultClients()
 ): Promise<SurfForecastProps> {
   const { lat, lon, spotMeta } = params;
-  const atmosphericData = await fetchAtmosphericData(lat, lon, clients.openMeteo);
-  const { tides, waterTemp } = await fetchNoaaData(spotMeta.noaaStationId, clients.noaa);
+
+  const [atmosphericData, noaaData] = await Promise.all([
+    fetchAtmosphericData(lat, lon, clients.openMeteo),
+    fetchNoaaData(spotMeta.noaaStationId, clients.noaa),
+  ]);
 
   const props = transformToSurfProps({
     ...atmosphericData,
-    tidesData: tides,
-    waterTemp,
+    tidesData: noaaData.tides,
+    waterTemp: noaaData.waterTemp,
     spotMeta,
     targetDate: getFormattedDate(),
   });
 
   return surfForecastSchema.parse(props);
+}
+
+function createDefaultClients(): FetchClients {
+  return {
+    openMeteo: new OpenMeteoClient(),
+    noaa: new NoaaTidesClient(),
+  };
 }
 
 async function fetchAtmosphericData(
@@ -52,21 +67,27 @@ async function fetchAtmosphericData(
 async function fetchNoaaData(
   stationId: string | undefined,
   client: NoaaTidesClient
-): Promise<{
-  tides: TideEvent[];
-  waterTemp: number | undefined;
-}> {
-  if (!stationId) return { tides: [], waterTemp: undefined };
+): Promise<NoaaData> {
+  if (!stationId) {
+    return { tides: [] };
+  }
 
   try {
-    const [tides, waterTemp] = await Promise.all([
-      client.fetchTides(stationId, new Date()),
-      client.fetchWaterTemp(stationId, new Date()),
-    ]);
-    return { tides, waterTemp };
+    return await fetchStationData(stationId, client);
   } catch (error) {
-    return { tides: [], waterTemp: undefined };
+    return { tides: [] };
   }
+}
+
+async function fetchStationData(
+  stationId: string,
+  client: NoaaTidesClient
+): Promise<NoaaData> {
+  const [tides, waterTemp] = await Promise.all([
+    client.fetchTides(stationId, new Date()),
+    client.fetchWaterTemp(stationId, new Date()),
+  ]);
+  return { tides, waterTemp };
 }
 
 function getFormattedDate(): string {

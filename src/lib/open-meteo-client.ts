@@ -32,24 +32,21 @@ export class OpenMeteoClient {
 
   async fetchMarineData(lat: number, lon: number): Promise<MarineData> {
     const url = this.buildMarineUrl(lat, lon);
-    console.log(`[v0] Fetching marine data from: ${url}`);
-
-    const response = await fetch(url);
-    this.ensureResponseOk(response, 'marine data');
-
-    const data = await response.json();
+    const data = await this.fetchJson(url, 'marine data');
     return MarineDataSchema.parse(data);
   }
 
   async fetchWindData(lat: number, lon: number): Promise<WeatherData> {
     const url = this.buildWeatherUrl(lat, lon);
-    console.log(`[v0] Fetching wind data from: ${url}`);
-
-    const response = await fetch(url);
-    this.ensureResponseOk(response, 'wind data');
-
-    const data = await response.json();
+    const data = await this.fetchJson(url, 'wind data');
     return WeatherDataSchema.parse(data);
+  }
+
+  private async fetchJson(url: string, dataType: string): Promise<unknown> {
+    console.log(`[v0] Fetching ${dataType} from: ${url}`);
+    const response = await fetch(url);
+    this.ensureResponseOk(response, dataType);
+    return response.json();
   }
 
   private buildMarineUrl(lat: number, lon: number): string {
