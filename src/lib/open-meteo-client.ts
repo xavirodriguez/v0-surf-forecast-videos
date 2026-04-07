@@ -43,7 +43,6 @@ export class OpenMeteoClient {
   }
 
   private async fetchJson(url: string, dataType: string): Promise<unknown> {
-    console.log(`[v0] Fetching ${dataType} from: ${url}`);
     const response = await fetch(url);
     this.ensureResponseOk(response, dataType);
     return response.json();

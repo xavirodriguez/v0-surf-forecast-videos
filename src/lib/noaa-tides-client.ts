@@ -57,7 +57,6 @@ export class NoaaTidesClient {
   }
 
   private async fetchJson(url: string, description: string): Promise<unknown> {
-    console.log(`[v0] Fetching ${description} from NOAA`);
     const response = await fetch(url);
     this.ensureResponseOk(response, description);
     return response.json();
