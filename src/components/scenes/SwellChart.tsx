@@ -1,3 +1,4 @@
+import React from "react";
 import {
   AbsoluteFill,
   useCurrentFrame,
@@ -17,242 +18,188 @@ type SwellChartProps = Pick<
   | "backgroundColor"
 >;
 
-export const SwellChart = ({
-  swellData,
-  currentWaveHeightUnit,
-  primaryColor,
-  secondaryColor,
-  backgroundColor,
-}: SwellChartProps) => {
-  const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
+interface LayoutConfig {
+  isPortrait: boolean;
+  padding: number;
+  chartHeight: number;
+}
 
+const getLayout = (width: number, height: number): LayoutConfig => {
   const isPortrait = height > width;
   const isSquare = width === height;
-  const padding = isPortrait ? 48 : isSquare ? 40 : 64;
-  const chartHeight = isPortrait ? 280 : isSquare ? 260 : 320;
+  return {
+    isPortrait,
+    padding: isPortrait ? 48 : isSquare ? 40 : 64,
+    chartHeight: isPortrait ? 280 : isSquare ? 260 : 320,
+  };
+};
 
-  const titleEntry = spring({ frame, fps, config: { damping: 180, stiffness: 90 } });
-  const titleOpacity = interpolate(titleEntry, [0, 1], [0, 1]);
-  const titleY = interpolate(titleEntry, [0, 1], [-20, 0]);
-
-  const maxHeight = Math.max(...swellData.map((s) => s.height));
-  const chartWidth = width - padding * 2;
-  const barGroupWidth = chartWidth / swellData.length;
-  const barPad = barGroupWidth * 0.25;
-  const barWidth = barGroupWidth - barPad * 2;
-
+const SwellTitle = ({
+  color,
+  isPortrait,
+}: {
+  color: string;
+  isPortrait: boolean;
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const entry = spring({ frame, fps, config: { damping: 180, stiffness: 90 } });
   return (
-    <AbsoluteFill
-      style={{
-        background: `linear-gradient(160deg, ${backgroundColor} 0%, ${secondaryColor}cc 100%)`,
-        padding,
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-        overflow: "hidden",
-      }}
-    >
-      {/* Title */}
-      <div style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}>
-        <h2
-          style={{
-            fontFamily: "sans-serif",
-            fontSize: isPortrait ? 20 : 22,
-            fontWeight: 700,
-            color: primaryColor,
-            margin: 0,
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-          }}
-        >
-          Swell Analysis
-        </h2>
-      </div>
-
-      {/* SVG Bar Chart */}
-      <svg
-        width={chartWidth}
-        height={chartHeight}
-        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-      >
-        {/* Grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
-          const y = chartHeight - pct * (chartHeight - 40) - 20;
-          const gridOpacity = interpolate(frame, [4, 12], [0, 0.25], {
-            extrapolateRight: "clamp",
-          });
-          return (
-            <g key={pct}>
-              <line
-                x1={0}
-                y1={y}
-                x2={chartWidth}
-                y2={y}
-                stroke="rgba(255,255,255,0.2)"
-                strokeWidth={1}
-                opacity={gridOpacity}
-                strokeDasharray="4 4"
-              />
-              <text
-                x={-8}
-                y={y + 4}
-                textAnchor="end"
-                fill="rgba(255,255,255,0.4)"
-                fontSize={11}
-                fontFamily="sans-serif"
-                opacity={gridOpacity}
-              >
-                {(pct * maxHeight).toFixed(1)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Bars */}
-        {swellData.map((swell, i) => {
-          const barEntry = spring({
-            frame: Math.max(0, frame - fps * 0.3 - i * fps * 0.2),
-            fps,
-            config: { damping: 160, stiffness: 60 },
-          });
-
-          const barHeightPx =
-            interpolate(barEntry, [0, 1], [0, 1]) *
-            ((swell.height / maxHeight) * (chartHeight - 60));
-
-          const x = i * barGroupWidth + barPad;
-          const y = chartHeight - 20 - barHeightPx;
-
-          const labelOpacity = interpolate(barEntry, [0.7, 1], [0, 1]);
-
-          return (
-            <g key={i}>
-              {/* Bar */}
-              <rect
-                x={x}
-                y={y}
-                width={barWidth}
-                height={barHeightPx}
-                rx={6}
-                fill={`url(#barGrad${i})`}
-              />
-              <defs>
-                <linearGradient
-                  id={`barGrad${i}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop offset="0%" stopColor={primaryColor} stopOpacity={0.95} />
-                  <stop offset="100%" stopColor={secondaryColor} stopOpacity={0.6} />
-                </linearGradient>
-              </defs>
-
-              {/* Height label on top of bar */}
-              <text
-                x={x + barWidth / 2}
-                y={Math.max(y - 8, 16)}
-                textAnchor="middle"
-                fill="white"
-                fontSize={14}
-                fontFamily="sans-serif"
-                fontWeight="700"
-                opacity={labelOpacity}
-              >
-                {swell.height.toFixed(1)} {currentWaveHeightUnit}
-              </text>
-
-              {/* X-axis labels */}
-              <text
-                x={x + barWidth / 2}
-                y={chartHeight - 2}
-                textAnchor="middle"
-                fill="rgba(255,255,255,0.55)"
-                fontSize={12}
-                fontFamily="sans-serif"
-                opacity={labelOpacity}
-              >
-                {swell.direction}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Swell detail cards */}
-      <div
+    <div style={{ opacity: interpolate(entry, [0, 1], [0, 1]), transform: `translateY(${interpolate(entry, [0, 1], [-20, 0])}px)` }}>
+      <h2
         style={{
-          display: "flex",
-          flexDirection: isPortrait ? "column" : "row",
-          gap: 12,
-          flex: 1,
+          fontFamily: "sans-serif",
+          fontSize: isPortrait ? 20 : 22,
+          fontWeight: 700,
+          color,
+          margin: 0,
+          textTransform: "uppercase",
+          letterSpacing: "0.15em",
         }}
       >
-        {swellData.map((swell, i) => {
-          const cardEntry = spring({
-            frame: Math.max(0, frame - fps * 0.6 - i * fps * 0.15),
-            fps,
-            config: { damping: 160, stiffness: 80 },
-          });
-          const cardOpacity = interpolate(cardEntry, [0, 1], [0, 1]);
-          const cardY = interpolate(cardEntry, [0, 1], [20, 0]);
+        Swell Analysis
+      </h2>
+    </div>
+  );
+};
 
-          const isPrimary = i === 0;
-          return (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                background: isPrimary ? `${primaryColor}22` : "rgba(255,255,255,0.06)",
-                border: `1px solid ${isPrimary ? primaryColor + "66" : "rgba(255,255,255,0.1)"}`,
-                borderRadius: 14,
-                padding: "14px 18px",
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                opacity: cardOpacity,
-                transform: `translateY(${cardY}px)`,
-              }}
-            >
-              <WindArrow degrees={swell.directionDegrees} size={36} color={primaryColor} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span
-                  style={{
-                    fontFamily: "sans-serif",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "rgba(255,255,255,0.45)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {isPrimary ? "Primary Swell" : `Swell ${i + 1}`}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "sans-serif",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "#ffffff",
-                  }}
-                >
-                  {swell.height.toFixed(1)} {currentWaveHeightUnit} @ {swell.period}s
-                </span>
-                <span
-                  style={{
-                    fontFamily: "sans-serif",
-                    fontSize: 13,
-                    color: "rgba(255,255,255,0.6)",
-                  }}
-                >
-                  {swell.direction} ({swell.directionDegrees}°)
-                </span>
-              </div>
-            </div>
-          );
-        })}
+const ChartGrid = ({ maxHeight, width, height }: { maxHeight: number; width: number; height: number }) => {
+  const frame = useCurrentFrame();
+  const gridLines = [0, 0.25, 0.5, 0.75, 1];
+  return (
+    <>
+      {gridLines.map((pct) => {
+        const y = height - pct * (height - 40) - 20;
+        const opacity = interpolate(frame, [4, 12], [0, 0.25], { extrapolateRight: "clamp" });
+        return (
+          <g key={pct}>
+            <line x1={0} y1={y} x2={width} y2={y} stroke="rgba(255,255,255,0.2)" strokeWidth={1} opacity={opacity} strokeDasharray="4 4" />
+            <text x={-8} y={y + 4} textAnchor="end" fill="rgba(255,255,255,0.4)" fontSize={11} fontFamily="sans-serif" opacity={opacity}>
+              {(pct * maxHeight).toFixed(1)}
+            </text>
+          </g>
+        );
+      })}
+    </>
+  );
+};
+
+const SwellBar = ({
+  swell,
+  index,
+  maxHeight,
+  chartHeight,
+  barWidth,
+  groupWidth,
+  pad,
+  primary,
+  secondary,
+  unit,
+}: {
+  swell: SurfForecastProps["swellData"][number];
+  index: number;
+  maxHeight: number;
+  chartHeight: number;
+  barWidth: number;
+  groupWidth: number;
+  pad: number;
+  primary: string;
+  secondary: string;
+  unit: string;
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const entry = spring({ frame: Math.max(0, frame - fps * 0.3 - index * fps * 0.2), fps, config: { damping: 160, stiffness: 60 } });
+  const h = interpolate(entry, [0, 1], [0, 1]) * ((swell.height / maxHeight) * (chartHeight - 60));
+  const x = index * groupWidth + pad;
+  const y = chartHeight - 20 - h;
+  const labelOp = interpolate(entry, [0.7, 1], [0, 1]);
+  return (
+    <g>
+      <rect x={x} y={y} width={barWidth} height={h} rx={6} fill={`url(#barGrad${index})`} />
+      <defs>
+        <linearGradient id={`barGrad${index}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={primary} stopOpacity={0.95} />
+          <stop offset="100%" stopColor={secondary} stopOpacity={0.6} />
+        </linearGradient>
+      </defs>
+      <text x={x + barWidth / 2} y={Math.max(y - 8, 16)} textAnchor="middle" fill="white" fontSize={14} fontWeight="700" opacity={labelOp}>
+        {swell.height.toFixed(1)} {unit}
+      </text>
+      <text x={x + barWidth / 2} y={chartHeight - 2} textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize={12} opacity={labelOp}>
+        {swell.direction}
+      </text>
+    </g>
+  );
+};
+
+const getSwellCardStyle = (isPrimary: boolean, color: string, entry: number): React.CSSProperties => ({
+  flex: 1,
+  background: isPrimary ? `${color}22` : "rgba(255,255,255,0.06)",
+  border: `1px solid ${isPrimary ? color + "66" : "rgba(255,255,255,0.1)"}`,
+  borderRadius: 14,
+  padding: "14px 18px",
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  opacity: entry,
+  transform: `translateY(${interpolate(entry, [0, 1], [20, 0])}px)`,
+});
+
+const SwellCard = ({
+  swell,
+  index,
+  unit,
+  color,
+}: {
+  swell: SurfForecastProps["swellData"][number];
+  index: number;
+  unit: string;
+  color: string;
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const entry = spring({ frame: Math.max(0, frame - fps * 0.6 - index * fps * 0.15), fps, config: { damping: 160, stiffness: 80 } });
+  return (
+    <div style={getSwellCardStyle(index === 0, color, entry)}>
+      <WindArrow degrees={swell.directionDegrees} size={36} color={color} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <span style={{ fontFamily: "sans-serif", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          {index === 0 ? "Primary Swell" : `Swell ${index + 1}`}
+        </span>
+        <span style={{ fontFamily: "sans-serif", fontSize: 20, fontWeight: 700, color: "#ffffff" }}>
+          {swell.height.toFixed(1)} {unit} @ {swell.period}s
+        </span>
+        <span style={{ fontFamily: "sans-serif", fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+          {swell.direction} ({swell.directionDegrees}°)
+        </span>
+      </div>
+    </div>
+  );
+};
+
+export const SwellChart = (props: SwellChartProps) => {
+  const { width, height } = useVideoConfig();
+  const layout = getLayout(width, height);
+  const chartW = width - layout.padding * 2;
+  const maxH = Math.max(...props.swellData.map((s) => s.height)) || 1;
+  const groupW = chartW / props.swellData.length;
+  const pad = groupW * 0.25;
+  const barW = groupW - pad * 2;
+
+  return (
+    <AbsoluteFill style={{ background: `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`, padding: layout.padding, display: "flex", flexDirection: "column", gap: 20, overflow: "hidden" }}>
+      <SwellTitle color={props.primaryColor} isPortrait={layout.isPortrait} />
+      <svg width={chartW} height={layout.chartHeight} viewBox={`0 0 ${chartW} ${layout.chartHeight}`}>
+        <ChartGrid maxHeight={maxH} width={chartW} height={layout.chartHeight} />
+        {props.swellData.map((swell, i) => (
+          <SwellBar key={i} swell={swell} index={i} maxHeight={maxH} chartHeight={layout.chartHeight} barWidth={barW} groupWidth={groupW} pad={pad} primary={props.primaryColor} secondary={props.secondaryColor} unit={props.currentWaveHeightUnit} />
+        ))}
+      </svg>
+      <div style={{ display: "flex", flexDirection: layout.isPortrait ? "column" : "row", gap: 12, flex: 1 }}>
+        {props.swellData.map((swell, i) => (
+          <SwellCard key={i} swell={swell} index={i} unit={props.currentWaveHeightUnit} color={props.primaryColor} />
+        ))}
       </div>
     </AbsoluteFill>
   );
