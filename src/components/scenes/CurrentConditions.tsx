@@ -200,25 +200,35 @@ const getStatsContainerStyle = (isPortrait: boolean): React.CSSProperties => ({
 export const CurrentConditions = (props: CurrentConditionsProps) => {
   const { width, height } = useVideoConfig();
   const config = getLayoutConfig(width, height);
+  const containerStyle = getContainerStyle(props.backgroundColor, props.secondaryColor, config.padding, config.gap);
+
   return (
-    <AbsoluteFill style={getContainerStyle(props.backgroundColor, props.secondaryColor, config.padding, config.gap)}>
+    <AbsoluteFill style={containerStyle}>
       <HeaderRow color={props.primaryColor} isPortrait={config.isPortrait} rating={props.overallRating} />
       <HeroHeight height={props.currentWaveHeight} unit={props.currentWaveHeightUnit} color={props.primaryColor} fontSize={config.heroFontSize} isPortrait={config.isPortrait} />
-      <div style={getStatsContainerStyle(config.isPortrait)}>
-        <StatCard label="Period" color={props.primaryColor}>
-          <AnimatedNumber value={props.currentPeriod} suffix="s" fontSize={config.statFontSize} color="#ffffff" />
-        </StatCard>
-        <StatCard label="Wind" color={props.primaryColor} delay={10}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <AnimatedNumber value={props.windSpeed} suffix="kts" fontSize={config.statFontSize} color="#ffffff" />
-            <WindArrow degrees={props.windDirectionDegrees} size={32} color={props.primaryColor} />
-            <span style={{ fontFamily: "sans-serif", fontSize: 15, color: "rgba(255,255,255,0.7)" }}>{props.windDirection}</span>
-          </div>
-        </StatCard>
-        <StatCard label="Water Temp" color={props.primaryColor} delay={20}>
-          <AnimatedNumber value={props.waterTemp} suffix={`°${props.waterTempUnit}`} fontSize={config.statFontSize} color="#ffffff" />
-        </StatCard>
-      </div>
+      <StatsGrid props={props} config={config} />
     </AbsoluteFill>
   );
 };
+
+const StatsGrid = ({ props, config }: { props: CurrentConditionsProps; config: LayoutConfig }) => (
+  <div style={getStatsContainerStyle(config.isPortrait)}>
+    <StatCard label="Period" color={props.primaryColor}>
+      <AnimatedNumber value={props.currentPeriod} suffix="s" fontSize={config.statFontSize} color="#ffffff" />
+    </StatCard>
+    <WindStatCard props={props} fontSize={config.statFontSize} />
+    <StatCard label="Water Temp" color={props.primaryColor} delay={20}>
+      <AnimatedNumber value={props.waterTemp} suffix={`°${props.waterTempUnit}`} fontSize={config.statFontSize} color="#ffffff" />
+    </StatCard>
+  </div>
+);
+
+const WindStatCard = ({ props, fontSize }: { props: CurrentConditionsProps; fontSize: number }) => (
+  <StatCard label="Wind" color={props.primaryColor} delay={10}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <AnimatedNumber value={props.windSpeed} suffix="kts" fontSize={fontSize} color="#ffffff" />
+      <WindArrow degrees={props.windDirectionDegrees} size={32} color={props.primaryColor} />
+      <span style={{ fontFamily: "sans-serif", fontSize: 15, color: "rgba(255,255,255,0.7)" }}>{props.windDirection}</span>
+    </div>
+  </StatCard>
+);

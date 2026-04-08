@@ -279,37 +279,43 @@ export const WindMap = (props: WindMapProps) => {
   const isPortrait = height > width;
   const isSquare = width === height;
   const padding = isPortrait ? 48 : isSquare ? 40 : 64;
-  const compassSize = isPortrait ? 280 : isSquare ? 260 : 320;
   const titleSpring = spring({ frame, fps, config: { damping: 180, stiffness: 90 } });
-  const compassSpring = spring({ frame: Math.max(0, frame - fps * 0.2), fps, config: { damping: 100, stiffness: 50 } });
-  const statsSpring = spring({ frame: Math.max(0, frame - fps * 0.5), fps, config: { damping: 160, stiffness: 80 } });
 
   return (
     <AbsoluteFill style={getContainerStyle(props.backgroundColor, props.secondaryColor, padding)}>
       <h2 style={getTitleStyle(isPortrait, props.primaryColor, titleSpring)}>Wind Conditions</h2>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: isPortrait ? "column" : "row",
-          gap: 40,
-          flex: 1,
-          alignItems: isPortrait ? "center" : "flex-start",
-        }}
-      >
-        <Compass size={compassSize} color={props.primaryColor} degrees={props.windDirectionDegrees} entry={compassSpring} />
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            flex: 1,
-            opacity: statsSpring,
-            transform: `translateX(${interpolate(statsSpring, [0, 1], [40, 0])}px)`,
-          }}
-        >
-          <WindStats speed={props.windSpeed} deg={props.windDirectionDegrees} color={props.primaryColor} isPortrait={isPortrait} isSquare={isSquare} />
-        </div>
-      </div>
+      <WindContent props={props} isPortrait={isPortrait} isSquare={isSquare} frame={frame} fps={fps} />
     </AbsoluteFill>
+  );
+};
+
+const WindContent = ({ props, isPortrait, isSquare, frame, fps }: { props: WindMapProps; isPortrait: boolean; isSquare: boolean; frame: number; fps: number }) => {
+  const compassSize = isPortrait ? 280 : isSquare ? 260 : 320;
+  const compassSpring = spring({ frame: Math.max(0, frame - fps * 0.2), fps, config: { damping: 100, stiffness: 50 } });
+  const contentStyle: React.CSSProperties = { display: "flex", flexDirection: isPortrait ? "column" : "row", gap: 40, flex: 1, alignItems: isPortrait ? "center" : "flex-start" };
+
+  return (
+    <div style={contentStyle}>
+      <Compass size={compassSize} color={props.primaryColor} degrees={props.windDirectionDegrees} entry={compassSpring} />
+      <WindStatsWrapper props={props} isPortrait={isPortrait} isSquare={isSquare} frame={frame} fps={fps} />
+    </div>
+  );
+};
+
+const WindStatsWrapper = ({ props, isPortrait, isSquare, frame, fps }: { props: WindMapProps; isPortrait: boolean; isSquare: boolean; frame: number; fps: number }) => {
+  const statsSpring = spring({ frame: Math.max(0, frame - fps * 0.5), fps, config: { damping: 160, stiffness: 80 } });
+  const wrapperStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    flex: 1,
+    opacity: statsSpring,
+    transform: `translateX(${interpolate(statsSpring, [0, 1], [40, 0])}px)`,
+  };
+
+  return (
+    <div style={wrapperStyle}>
+      <WindStats speed={props.windSpeed} deg={props.windDirectionDegrees} color={props.primaryColor} isPortrait={isPortrait} isSquare={isSquare} />
+    </div>
   );
 };

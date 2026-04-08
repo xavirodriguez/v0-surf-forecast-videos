@@ -210,23 +210,41 @@ const TideSvg = ({
 export const TideChart = (props: TideChartProps) => {
   const { width, height } = useVideoConfig();
   const { isPortrait, padding } = getLayout(width, height);
-  if (props.tides.length === 0) {
-    return (
-      <AbsoluteFill style={{ background: `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <h2 style={{ color: "white", fontFamily: "sans-serif" }}>Tide data unavailable</h2>
-      </AbsoluteFill>
-    );
-  }
-  const nextTide = props.tides.find((t) => t.type === "high") ?? props.tides[0];
+  const bg = `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`;
+
+  if (props.tides.length === 0) return <TideUnavailableView background={bg} />;
+
   return (
-    <AbsoluteFill style={{ background: `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`, padding, display: "flex", flexDirection: "column", gap: 20, overflow: "hidden" }}>
+    <AbsoluteFill style={getTideContainerStyle(bg, padding)}>
       <TideTitle color={props.primaryColor} isPortrait={isPortrait} />
       <TideSvg tides={props.tides} primary={props.primaryColor} secondary={props.secondaryColor} width={width} height={height} padding={padding} />
-      <div style={{ display: "flex", flexDirection: isPortrait ? "column" : "row", gap: 12 }}>
-        {props.tides.map((t, i) => (
-          <TideCard key={i} tide={t} index={i} isNext={t === nextTide} color={props.primaryColor} bg={props.backgroundColor} />
-        ))}
-      </div>
+      <TideCardsList props={props} isPortrait={isPortrait} />
     </AbsoluteFill>
+  );
+};
+
+const getTideContainerStyle = (bg: string, padding: number): React.CSSProperties => ({
+  background: bg,
+  padding,
+  display: "flex",
+  flexDirection: "column",
+  gap: 20,
+  overflow: "hidden",
+});
+
+const TideUnavailableView = ({ background }: { background: string }) => (
+  <AbsoluteFill style={{ background, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <h2 style={{ color: "white", fontFamily: "sans-serif" }}>Tide data unavailable</h2>
+  </AbsoluteFill>
+);
+
+const TideCardsList = ({ props, isPortrait }: { props: TideChartProps; isPortrait: boolean }) => {
+  const nextTide = props.tides.find((t) => t.type === "high") ?? props.tides[0];
+  return (
+    <div style={{ display: "flex", flexDirection: isPortrait ? "column" : "row", gap: 12 }}>
+      {props.tides.map((t, i) => (
+        <TideCard key={i} tide={t} index={i} isNext={t === nextTide} color={props.primaryColor} bg={props.backgroundColor} />
+      ))}
+    </div>
   );
 };

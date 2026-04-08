@@ -197,7 +197,7 @@ function FieldError({
     }
 
     if (!errors) {
-      return null
+      return undefined
     }
 
     if (errors.length === 1 && errors[0]?.message) {
@@ -215,7 +215,7 @@ function FieldError({
   }, [children, errors])
 
   if (!content) {
-    return null
+    return <></>
   }
 
   return (

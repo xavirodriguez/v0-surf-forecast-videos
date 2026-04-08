@@ -174,26 +174,20 @@ const IntroBadge = ({
   </div>
 );
 
-const SpotInfoSection = ({
-  props,
-  config,
-  entry,
-}: {
-  props: IntroSceneProps;
-  config: LayoutConfig;
-  entry: number;
-}) => (
-  <div
-    style={{
-      opacity: entry,
-      transform: `translateY(${interpolate(entry, [0, 1], [40, 0])}px)`,
-      marginBottom: config.isPortrait ? 48 : 32,
-    }}
-  >
-    <SpotTitle name={props.spotName} fontSize={config.titleFontSize} isPortrait={config.isPortrait} />
-    <SpotDetails location={props.spotLocation} date={props.date} config={config} />
-  </div>
-);
+const SpotInfoSection = ({ props, config, frame, fps }: { props: IntroSceneProps; config: LayoutConfig; frame: number; fps: number }) => {
+  const entry = spring({ frame: Math.max(0, frame - 6), fps, config: { damping: 180, stiffness: 100 } });
+  const style: React.CSSProperties = {
+    opacity: entry,
+    transform: `translateY(${interpolate(entry, [0, 1], [40, 0])}px)`,
+    marginBottom: config.isPortrait ? 48 : 32,
+  };
+  return (
+    <div style={style}>
+      <SpotTitle name={props.spotName} fontSize={config.titleFontSize} isPortrait={config.isPortrait} />
+      <SpotDetails location={props.spotLocation} date={props.date} config={config} />
+    </div>
+  );
+};
 
 const getContainerStyle = (
   backgroundColor: string,
@@ -211,19 +205,44 @@ const getContainerStyle = (
 });
 
 export const IntroScene = (props: IntroSceneProps) => {
-  const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
+  const frame = useCurrentFrame();
   const config = getLayoutConfig(width, height);
-  const getEntry = (delay: number) =>
-    spring({ frame: Math.max(0, frame - delay), fps, config: { damping: 180, stiffness: 100 } });
-  const lineWidth = interpolate(frame, [0, fps * 0.8], [0, width * 0.5], { extrapolateRight: "clamp" });
+  const containerStyle = getContainerStyle(props.backgroundColor, props.secondaryColor, config.padding, config.isPortrait);
 
   return (
-    <AbsoluteFill style={getContainerStyle(props.backgroundColor, props.secondaryColor, config.padding, config.isPortrait)}>
-      <BrandHeader name={props.brandName} color={props.primaryColor} fontSize={config.brandFontSize} entry={getEntry(0)} isPortrait={config.isPortrait} />
-      <SpotInfoSection props={props} config={config} entry={getEntry(6)} />
-      {!config.isPortrait && <SeparatorLine color={props.primaryColor} width={lineWidth} />}
-      <IntroBadge rating={props.overallRating} entry={getEntry(18)} isPortrait={config.isPortrait} />
+    <AbsoluteFill style={containerStyle}>
+      <IntroBrandSection props={props} config={config} frame={frame} fps={fps} />
+      <SpotInfoSection props={props} config={config} frame={frame} fps={fps} />
+      <IntroDecorativeElements config={config} primaryColor={props.primaryColor} frame={frame} fps={fps} width={width} />
+      <IntroBadge rating={props.overallRating} entry={spring({ frame: Math.max(0, frame - 18), fps, config: { damping: 180, stiffness: 100 } })} isPortrait={config.isPortrait} />
     </AbsoluteFill>
   );
+};
+
+const IntroBrandSection = ({ props, config, frame, fps }: { props: IntroSceneProps; config: LayoutConfig; frame: number; fps: number }) => {
+  const entry = spring({ frame: Math.max(0, frame - 0), fps, config: { damping: 180, stiffness: 100 } });
+  return (
+    <BrandHeader name={props.brandName} color={props.primaryColor} fontSize={config.brandFontSize} entry={entry} isPortrait={config.isPortrait} />
+  );
+};
+
+const IntroDecorativeElements = ({
+  config,
+  primaryColor,
+  frame,
+  fps,
+  width,
+}: {
+  config: LayoutConfig;
+  primaryColor: string;
+  frame: number;
+  fps: number;
+  width: number;
+}) => {
+  if (config.isPortrait) {
+    return <></>;
+  }
+  const lineWidth = interpolate(frame, [0, fps * 0.8], [0, width * 0.5], { extrapolateRight: "clamp" });
+  return <SeparatorLine color={primaryColor} width={lineWidth} />;
 };

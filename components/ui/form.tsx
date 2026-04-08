@@ -140,7 +140,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const body = error ? String(error?.message ?? '') : props.children
 
   if (!body) {
-    return null
+    return <></>
   }
 
   return (
