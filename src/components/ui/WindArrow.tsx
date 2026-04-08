@@ -20,7 +20,9 @@ export const WindArrow = ({
     config: { damping: 120, stiffness: 80 },
   });
 
-  const rotation = interpolate(entry, [0, 1], [degrees - 90, degrees]);
+  const startRotation = (degrees || 0) - 90;
+  const endRotation = degrees || 0;
+  const rotation = interpolate(entry, [0, 1], [startRotation, endRotation]);
 
   return (
     <svg

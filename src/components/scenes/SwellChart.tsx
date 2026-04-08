@@ -181,6 +181,19 @@ const SwellCard = ({
 export const SwellChart = (props: SwellChartProps) => {
   const { width, height } = useVideoConfig();
   const layout = getLayout(width, height);
+  const bg = `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`;
+  const containerStyle: React.CSSProperties = { background: bg, padding: layout.padding, display: "flex", flexDirection: "column", gap: 20, overflow: "hidden" };
+
+  return (
+    <AbsoluteFill style={containerStyle}>
+      <SwellTitle color={props.primaryColor} isPortrait={layout.isPortrait} />
+      <SwellSvgChart props={props} width={width} layout={layout} />
+      <SwellCardsList props={props} isPortrait={layout.isPortrait} />
+    </AbsoluteFill>
+  );
+};
+
+const SwellSvgChart = ({ props, width, layout }: { props: SwellChartProps; width: number; layout: LayoutConfig }) => {
   const chartW = width - layout.padding * 2;
   const maxH = Math.max(...props.swellData.map((s) => s.height)) || 1;
   const groupW = chartW / props.swellData.length;
@@ -188,19 +201,19 @@ export const SwellChart = (props: SwellChartProps) => {
   const barW = groupW - pad * 2;
 
   return (
-    <AbsoluteFill style={{ background: `linear-gradient(160deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`, padding: layout.padding, display: "flex", flexDirection: "column", gap: 20, overflow: "hidden" }}>
-      <SwellTitle color={props.primaryColor} isPortrait={layout.isPortrait} />
-      <svg width={chartW} height={layout.chartHeight} viewBox={`0 0 ${chartW} ${layout.chartHeight}`}>
-        <ChartGrid maxHeight={maxH} width={chartW} height={layout.chartHeight} />
-        {props.swellData.map((swell, i) => (
-          <SwellBar key={i} swell={swell} index={i} maxHeight={maxH} chartHeight={layout.chartHeight} barWidth={barW} groupWidth={groupW} pad={pad} primary={props.primaryColor} secondary={props.secondaryColor} unit={props.currentWaveHeightUnit} />
-        ))}
-      </svg>
-      <div style={{ display: "flex", flexDirection: layout.isPortrait ? "column" : "row", gap: 12, flex: 1 }}>
-        {props.swellData.map((swell, i) => (
-          <SwellCard key={i} swell={swell} index={i} unit={props.currentWaveHeightUnit} color={props.primaryColor} />
-        ))}
-      </div>
-    </AbsoluteFill>
+    <svg width={chartW} height={layout.chartHeight} viewBox={`0 0 ${chartW} ${layout.chartHeight}`}>
+      <ChartGrid maxHeight={maxH} width={chartW} height={layout.chartHeight} />
+      {props.swellData.map((swell, i) => (
+        <SwellBar key={i} swell={swell} index={i} maxHeight={maxH} chartHeight={layout.chartHeight} barWidth={barW} groupWidth={groupW} pad={pad} primary={props.primaryColor} secondary={props.secondaryColor} unit={props.currentWaveHeightUnit} />
+      ))}
+    </svg>
   );
 };
+
+const SwellCardsList = ({ props, isPortrait }: { props: SwellChartProps; isPortrait: boolean }) => (
+  <div style={{ display: "flex", flexDirection: isPortrait ? "column" : "row", gap: 12, flex: 1 }}>
+    {props.swellData.map((swell, i) => (
+      <SwellCard key={i} swell={swell} index={i} unit={props.currentWaveHeightUnit} color={props.primaryColor} />
+    ))}
+  </div>
+);

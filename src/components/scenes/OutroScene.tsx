@@ -145,30 +145,34 @@ const MainCTA = ({
 );
 
 export const OutroScene = (props: OutroSceneProps) => {
-  const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
-  const isPortrait = height > width, isSquare = width === height, padding = isPortrait ? 60 : isSquare ? 50 : 80;
+  const frame = useCurrentFrame();
+  const isPortrait = height > width;
+  const padding = isPortrait ? 60 : width === height ? 50 : 80;
+  const bg = `linear-gradient(135deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`;
+  const containerStyle: React.CSSProperties = { background: bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding, overflow: "hidden" };
+
+  return (
+    <AbsoluteFill style={containerStyle}>
+      <Ripple width={width} color={props.primaryColor} entry={spring({ frame, fps, config: { damping: 180, stiffness: 60 } })} />
+      <OutroContent props={props} frame={frame} fps={fps} width={width} height={height} />
+    </AbsoluteFill>
+  );
+};
+
+const OutroContent = ({ props, frame, fps, width, height }: { props: OutroSceneProps; frame: number; fps: number; width: number; height: number }) => {
+  const isPortrait = height > width, isSquare = width === height;
   const titleSize = isPortrait ? 52 : isSquare ? 44 : 64, subSize = isPortrait ? 22 : isSquare ? 20 : 26, brandSize = isPortrait ? 20 : isSquare ? 18 : 22;
   const getSpring = (d: number, s: number) => spring({ frame: Math.max(0, frame - d), fps, config: { damping: 180, stiffness: s } });
   const badgeSpring = getSpring(22, 90);
+
   return (
-    <AbsoluteFill
-      style={{
-        background: `linear-gradient(135deg, ${props.backgroundColor} 0%, ${props.secondaryColor}cc 100%)`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding,
-        overflow: "hidden",
-      }}
-    >
-      <Ripple width={width} color={props.primaryColor} entry={getSpring(0, 60)} />
+    <>
       <OutroBrand name={props.brandName} color={props.primaryColor} fontSize={brandSize} entry={getSpring(6, 160)} />
       <MainCTA spotName={props.spotName} color={props.primaryColor} titleFontSize={titleSize} subFontSize={subSize} entry={getSpring(14, 70)} />
       <div style={{ transform: `scale(${interpolate(badgeSpring, [0, 1], [0.5, 1])})`, opacity: badgeSpring }}>
         <ConditionBadge rating={props.overallRating} fontSize={isPortrait ? 18 : 16} paddingH={24} paddingV={10} />
       </div>
-    </AbsoluteFill>
+    </>
   );
 };

@@ -188,17 +188,32 @@ export const HourlyForecast = (props: HourlyForecastProps) => {
   const isPortrait = height > width;
   const isSquare = width === height;
   const padding = isPortrait ? 48 : isSquare ? 40 : 64;
-  const rowSize = isPortrait ? 18 : isSquare ? 16 : 20;
+  const containerStyle = getContainerStyle(props.backgroundColor, props.secondaryColor, padding);
 
   return (
-    <AbsoluteFill style={getContainerStyle(props.backgroundColor, props.secondaryColor, padding)}>
+    <AbsoluteFill style={containerStyle}>
       <HourlyTitle color={props.primaryColor} isPortrait={isPortrait} />
       <HourlyHeader color={props.primaryColor} isPortrait={isPortrait} fontSize={isPortrait ? 12 : 13} />
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-        {props.hourlyForecast.map((row, index) => (
-          <HourlyRow key={row.hour} row={row} index={index} unit={props.currentWaveHeightUnit} color={props.primaryColor} isPortrait={isPortrait} fontSize={rowSize} />
-        ))}
-      </div>
+      <HourlyRowsList props={props} isPortrait={isPortrait} isSquare={isSquare} />
     </AbsoluteFill>
+  );
+};
+
+const HourlyRowsList = ({
+  props,
+  isPortrait,
+  isSquare,
+}: {
+  props: HourlyForecastProps;
+  isPortrait: boolean;
+  isSquare: boolean;
+}) => {
+  const rowSize = isPortrait ? 18 : isSquare ? 16 : 20;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+      {props.hourlyForecast.map((row, index) => (
+        <HourlyRow key={row.hour} row={row} index={index} unit={props.currentWaveHeightUnit} color={props.primaryColor} isPortrait={isPortrait} fontSize={rowSize} />
+      ))}
+    </div>
   );
 };

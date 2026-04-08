@@ -102,9 +102,15 @@ function buildHourlyForecast(context: TransformContext) {
 }
 
 function buildHourlyEntry(context: TransformContext, index: number) {
-  const { marineData, windData, spotMeta } = context;
-  if (index >= marineData.hourly.wave_height.length) return undefined;
+  const { marineData } = context;
+  if (index >= marineData.hourly.wave_height.length) {
+    return undefined;
+  }
+  return assembleHourlyForecastItem(context, index);
+}
 
+function assembleHourlyForecastItem(context: TransformContext, index: number) {
+  const { marineData, windData, spotMeta } = context;
   const waveHeight = marineData.hourly.wave_height[index];
   const period = marineData.hourly.wave_period[index];
   const windSpeed = windData.hourly.windspeed_10m[index];
