@@ -40,15 +40,21 @@ export class NoaaTidesClient {
     }
   }
 
-  async fetchWaterTemp(stationId: string, date: Date): Promise<number | undefined> {
+  async fetchWaterTemp(stationId: string, date: Date): Promise<number> {
     const url = this.buildWaterTempUrl(stationId, date);
     try {
       const data = await this.fetchJson(url, `water temp for station ${stationId}`);
-      if (this.hasError(data)) return undefined;
+      this.ensureDataAvailable(data);
       return this.parseWaterTemp(data);
     } catch (error) {
       console.warn(`[v0] Failed to fetch water temperature: ${error}`);
-      return undefined;
+      return 0;
+    }
+  }
+
+  private ensureDataAvailable(data: unknown): void {
+    if (this.hasError(data)) {
+      throw new Error("NOAA API returned error or empty response");
     }
   }
 

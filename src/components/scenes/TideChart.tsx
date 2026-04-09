@@ -150,9 +150,17 @@ function buildSmoothPath(pts: { x: number; y: number }[]): string {
   if (pts.length < 2) return "";
   let d = `M ${pts[0].x},${pts[0].y}`;
   for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(i + 2, pts.length - 1)];
-    const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6, cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+    const prevPoint = pts[Math.max(i - 1, 0)];
+    const currentPoint = pts[i];
+    const nextPoint = pts[i + 1];
+    const farNextPoint = pts[Math.min(i + 2, pts.length - 1)];
+
+    const cp1x = currentPoint.x + (nextPoint.x - prevPoint.x) / 6;
+    const cp1y = currentPoint.y + (nextPoint.y - prevPoint.y) / 6;
+    const cp2x = nextPoint.x - (farNextPoint.x - currentPoint.x) / 6;
+    const cp2y = nextPoint.y - (farNextPoint.y - currentPoint.y) / 6;
+
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${nextPoint.x},${nextPoint.y}`;
   }
   return d;
 }
@@ -164,6 +172,23 @@ const TideSvgBackground = ({ width, height }: { width: number; height: number })
     <text x={24} y={34} textAnchor="end" fill="rgba(255,255,255,0.3)" fontSize={10} fontFamily="sans-serif">HI</text>
     <text x={24} y={height - 26} textAnchor="end" fill="rgba(255,255,255,0.3)" fontSize={10} fontFamily="sans-serif">LO</text>
   </g>
+);
+
+const TideChartDefs = ({ primary, progress, height }: { primary: string; progress: number; height: number }) => (
+  <defs>
+    <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor={primary} stopOpacity="0.4" />
+      <stop offset="100%" stopColor={primary} stopOpacity="0.04" />
+    </linearGradient>
+    <clipPath id="clip"><rect x={0} y={0} width={progress} height={height} /></clipPath>
+  </defs>
+);
+
+const TideChartPaths = ({ areaPath, linePath, primary }: { areaPath: string; linePath: string; primary: string }) => (
+  <>
+    <path d={areaPath} fill="url(#areaG)" clipPath="url(#clip)" />
+    <path d={linePath} fill="none" stroke={primary} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" clipPath="url(#clip)" />
+  </>
 );
 
 const TideSvg = ({
@@ -192,16 +217,9 @@ const TideSvg = ({
   const progress = interpolate(spring({ frame: Math.max(0, useCurrentFrame() - useVideoConfig().fps * 0.2), fps: useVideoConfig().fps, config: { damping: 160, stiffness: 50 } }), [0, 1], [0, chartW]);
   return (
     <svg width={chartW} height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} style={{ opacity: interpolate(progress, [0, chartW], [0, 1]) }}>
-      <defs>
-        <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={primary} stopOpacity="0.4" />
-          <stop offset="100%" stopColor={primary} stopOpacity="0.04" />
-        </linearGradient>
-        <clipPath id="clip"><rect x={0} y={0} width={progress} height={chartH} /></clipPath>
-      </defs>
+      <TideChartDefs primary={primary} progress={progress} height={chartH} />
       <TideSvgBackground width={chartW} height={chartH} />
-      <path d={areaPath} fill="url(#areaG)" clipPath="url(#clip)" />
-      <path d={linePath} fill="none" stroke={primary} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" clipPath="url(#clip)" />
+      <TideChartPaths areaPath={areaPath} linePath={linePath} primary={primary} />
       {points.map((pt, i) => <TidePoint key={i} pt={pt} tide={tides[i]} index={i} primary={primary} secondary={secondary} />)}
     </svg>
   );
