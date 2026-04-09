@@ -17,7 +17,7 @@ export interface TransformParams {
   marineData: MarineData;
   windData: WeatherData;
   tidesData: TideEvent[];
-  waterTemp: number | undefined;
+  waterTemp: number;
   spotMeta: SpotMeta;
   targetDate: string;
 }
@@ -133,20 +133,42 @@ function formatTime(timeString: string): string {
   });
 }
 
-function calculateCurrentConditions(context: TransformContext, waterTemp: number | undefined): CurrentConditions {
-  const { marineData, windData, spotMeta, startHourIndex } = context;
-  const h = marineData.hourly;
+function calculateCurrentConditions(
+  context: TransformContext,
+  waterTemp: number
+): CurrentConditions {
+  const { marineData, windData, startHourIndex } = context;
+  const hourlyMarineData = marineData.hourly;
 
-  const rawHeight = average(h.wave_height[startHourIndex], h.wave_height[startHourIndex + 1]);
-  const currentPeriod = average(h.wave_period[startHourIndex], h.wave_period[startHourIndex + 1]);
-  const tempCelsius = waterTemp ?? windData.hourly.temperature_2m[startHourIndex];
+  const rawHeight = average(
+    hourlyMarineData.wave_height[startHourIndex],
+    hourlyMarineData.wave_height[startHourIndex + 1]
+  );
+  const currentPeriod = average(
+    hourlyMarineData.wave_period[startHourIndex],
+    hourlyMarineData.wave_period[startHourIndex + 1]
+  );
+  const tempCelsius = waterTemp || windData.hourly.temperature_2m[startHourIndex];
+
+  return assembleCurrentConditions(
+    context,
+    { rawHeight, currentPeriod, tempCelsius }
+  );
+}
+
+function assembleCurrentConditions(
+  context: TransformContext,
+  calculated: { rawHeight: number; currentPeriod: number; tempCelsius: number }
+): CurrentConditions {
+  const { marineData, windData, spotMeta, startHourIndex } = context;
+  const { rawHeight, currentPeriod, tempCelsius } = calculated;
 
   return {
     rawHeight,
     currentWaveHeight: converter.convertHeight(rawHeight, spotMeta.currentWaveHeightUnit),
     currentWaveHeightUnit: spotMeta.currentWaveHeightUnit,
     currentPeriod: roundToOneDecimal(currentPeriod),
-    ...calculateCurrentWaveDetails(h, startHourIndex),
+    ...calculateCurrentWaveDetails(marineData.hourly, startHourIndex),
     ...calculateCurrentWaterTemp(tempCelsius, spotMeta.waterTempUnit),
     ...calculateCurrentWindDetails(windData, startHourIndex),
   };
@@ -184,15 +206,15 @@ function roundToOneDecimal(value: number): number {
 
 function buildSwellData(context: TransformContext) {
   const { marineData, startHourIndex } = context;
-  const h = marineData.hourly;
+  const hourlyMarineData = marineData.hourly;
 
-  if (h.swell_wave_height[startHourIndex] <= 0) return [];
+  if (hourlyMarineData.swell_wave_height[startHourIndex] <= 0) return [];
 
   return [{
-    height: h.swell_wave_height[startHourIndex],
-    period: h.swell_wave_period[startHourIndex],
-    direction: degreesToCardinal(h.swell_wave_direction[startHourIndex]),
-    directionDegrees: h.swell_wave_direction[startHourIndex],
+    height: hourlyMarineData.swell_wave_height[startHourIndex],
+    period: hourlyMarineData.swell_wave_period[startHourIndex],
+    direction: degreesToCardinal(hourlyMarineData.swell_wave_direction[startHourIndex]),
+    directionDegrees: hourlyMarineData.swell_wave_direction[startHourIndex],
   }];
 }
 

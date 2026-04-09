@@ -240,11 +240,21 @@ const QualityCard = ({ degrees, isPortrait }: { degrees: number; isPortrait: boo
   </div>
 );
 
+const WindSpeedDisplay = ({ speed, color, isPortrait, isSquare }: { speed: number; color: string; isPortrait: boolean; isSquare: boolean }) => (
+  <SpeedCard knots={speed} color={color} isPortrait={isPortrait} isSquare={isSquare} />
+);
+
+const WindQualityDisplay = ({ degrees, isPortrait, color }: { degrees: number; isPortrait: boolean; color: string }) => (
+  <>
+    <QualityCard degrees={degrees} isPortrait={isPortrait} />
+    <WindFlow color={color} degrees={degrees} />
+  </>
+);
+
 const WindStats = ({ speed, deg, color, isPortrait, isSquare }: { speed: number; deg: number; color: string; isPortrait: boolean; isSquare: boolean }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
-    <SpeedCard knots={speed} color={color} isPortrait={isPortrait} isSquare={isSquare} />
-    <QualityCard degrees={deg} isPortrait={isPortrait} />
-    <WindFlow color={color} degrees={deg} />
+    <WindSpeedDisplay speed={speed} color={color} isPortrait={isPortrait} isSquare={isSquare} />
+    <WindQualityDisplay degrees={deg} isPortrait={isPortrait} color={color} />
   </div>
 );
 

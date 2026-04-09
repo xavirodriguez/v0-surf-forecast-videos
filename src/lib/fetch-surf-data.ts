@@ -17,7 +17,7 @@ interface FetchClients {
 
 interface NoaaData {
   tides: TideEvent[];
-  waterTemp?: number;
+  waterTemp: number;
 }
 
 export async function fetchSurfData(
@@ -69,13 +69,13 @@ async function fetchNoaaData(
   client: NoaaTidesClient
 ): Promise<NoaaData> {
   if (!stationId) {
-    return { tides: [] };
+    return { tides: [], waterTemp: 0 };
   }
 
   try {
     return await fetchStationData(stationId, client);
   } catch (error) {
-    return { tides: [] };
+    return { tides: [], waterTemp: 0 };
   }
 }
 

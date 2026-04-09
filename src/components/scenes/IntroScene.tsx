@@ -204,19 +204,37 @@ const getContainerStyle = (
   overflow: "hidden",
 });
 
+const IntroLayout = ({
+  children,
+  backgroundColor,
+  secondaryColor,
+  padding,
+  isPortrait,
+}: {
+  children: React.ReactNode;
+  backgroundColor: string;
+  secondaryColor: string;
+  padding: number;
+  isPortrait: boolean;
+}) => (
+  <AbsoluteFill style={getContainerStyle(backgroundColor, secondaryColor, padding, isPortrait)}>
+    {children}
+  </AbsoluteFill>
+);
+
 export const IntroScene = (props: IntroSceneProps) => {
   const { fps, width, height } = useVideoConfig();
   const frame = useCurrentFrame();
   const config = getLayoutConfig(width, height);
-  const containerStyle = getContainerStyle(props.backgroundColor, props.secondaryColor, config.padding, config.isPortrait);
+  const badgeEntry = spring({ frame: Math.max(0, frame - 18), fps, config: { damping: 180, stiffness: 100 } });
 
   return (
-    <AbsoluteFill style={containerStyle}>
+    <IntroLayout backgroundColor={props.backgroundColor} secondaryColor={props.secondaryColor} padding={config.padding} isPortrait={config.isPortrait}>
       <IntroBrandSection props={props} config={config} frame={frame} fps={fps} />
       <SpotInfoSection props={props} config={config} frame={frame} fps={fps} />
       <IntroDecorativeElements config={config} primaryColor={props.primaryColor} frame={frame} fps={fps} width={width} />
-      <IntroBadge rating={props.overallRating} entry={spring({ frame: Math.max(0, frame - 18), fps, config: { damping: 180, stiffness: 100 } })} isPortrait={config.isPortrait} />
-    </AbsoluteFill>
+      <IntroBadge rating={props.overallRating} entry={badgeEntry} isPortrait={config.isPortrait} />
+    </IntroLayout>
   );
 };
 

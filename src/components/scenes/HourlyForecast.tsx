@@ -136,6 +136,33 @@ const getRowStyle = (
   transform: `translateX(${interpolate(entry, [0, 1], [-40, 0])}px)`,
 });
 
+const HourlyDataCells = ({
+  row,
+  unit,
+  color,
+  isPortrait,
+  fontSize,
+  isHigh,
+}: {
+  row: HourlyForecastItem;
+  unit: string;
+  color: string;
+  isPortrait: boolean;
+  fontSize: number;
+  isHigh: boolean;
+}) => (
+  <>
+    <span style={{ fontFamily: "sans-serif", fontSize, fontWeight: isHigh ? 700 : 400, color: isHigh ? "#ffffff" : "rgba(255,255,255,0.75)" }}>{row.hour}</span>
+    <span style={{ fontFamily: "sans-serif", fontSize, fontWeight: 700, color: "#ffffff" }}>{row.waveHeight.toFixed(1)} {unit}</span>
+    <span style={{ fontFamily: "sans-serif", fontSize, color: "rgba(255,255,255,0.75)" }}>{row.period}s</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <WindArrow degrees={row.windDirectionDegrees} size={20} color={color} />
+      <span style={{ fontFamily: "sans-serif", fontSize: fontSize - 2, color: "rgba(255,255,255,0.75)" }}>{row.windSpeed}kts</span>
+    </div>
+    {!isPortrait && <RatingBadge color={getRatingColor(row.rating)} label={getRatingLabel(row.rating)} />}
+  </>
+);
+
 const HourlyRow = ({
   row,
   index,
@@ -158,14 +185,7 @@ const HourlyRow = ({
   const isHigh = index === 0 || index === 1;
   return (
     <div style={getRowStyle(isPortrait, color, isHigh, entry)}>
-      <span style={{ fontFamily: "sans-serif", fontSize, fontWeight: isHigh ? 700 : 400, color: isHigh ? "#ffffff" : "rgba(255,255,255,0.75)" }}>{row.hour}</span>
-      <span style={{ fontFamily: "sans-serif", fontSize, fontWeight: 700, color: "#ffffff" }}>{row.waveHeight.toFixed(1)} {unit}</span>
-      <span style={{ fontFamily: "sans-serif", fontSize, color: "rgba(255,255,255,0.75)" }}>{row.period}s</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <WindArrow degrees={row.windDirectionDegrees} size={20} color={color} />
-        <span style={{ fontFamily: "sans-serif", fontSize: fontSize - 2, color: "rgba(255,255,255,0.75)" }}>{row.windSpeed}kts</span>
-      </div>
-      {!isPortrait && <RatingBadge color={getRatingColor(row.rating)} label={getRatingLabel(row.rating)} />}
+      <HourlyDataCells row={row} unit={unit} color={color} isPortrait={isPortrait} fontSize={fontSize} isHigh={isHigh} />
     </div>
   );
 };
