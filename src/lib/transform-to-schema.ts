@@ -5,6 +5,7 @@ import { SpotMeta } from "./spots";
 import { degreesToCardinal } from "./degrees-to-cardinal";
 import { ratingFromWaveData, SurfRating } from "./rating-calculator";
 import { UnitConverter } from "./unit-converter";
+import { getAvgValue, roundToOneDecimal } from "./math-utils";
 
 interface TransformContext {
   marineData: MarineData;
@@ -140,11 +141,11 @@ function calculateCurrentConditions(
   const { marineData, windData, startHourIndex } = context;
   const hourlyMarineData = marineData.hourly;
 
-  const rawHeight = average(
+  const rawHeight = getAvgValue(
     hourlyMarineData.wave_height[startHourIndex],
     hourlyMarineData.wave_height[startHourIndex + 1]
   );
-  const currentPeriod = average(
+  const currentPeriod = getAvgValue(
     hourlyMarineData.wave_period[startHourIndex],
     hourlyMarineData.wave_period[startHourIndex + 1]
   );
@@ -194,14 +195,6 @@ function calculateCurrentWindDetails(windData: WeatherData, index: number) {
     windDirection: degreesToCardinal(windData.hourly.winddirection_10m[index]),
     windDirectionDegrees: windData.hourly.winddirection_10m[index],
   };
-}
-
-function average(val1: number, val2: number | undefined): number {
-  return (val1 + (val2 ?? val1)) / 2;
-}
-
-function roundToOneDecimal(value: number): number {
-  return Math.round(value * 10) / 10;
 }
 
 function buildSwellData(context: TransformContext) {
